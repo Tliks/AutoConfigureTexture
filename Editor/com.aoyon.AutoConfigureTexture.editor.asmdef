@@ -19,8 +19,8 @@
     "versionDefines": [
         {
             "name": "jp.lilxyzw.liltoon",
-            "expression": "",
-            "define": "HAS_lILTOON"
+            "expression": "1.8.0",
+            "define": "ACT_lILTOON_1_8_0"
         },
         {
         "name": "com.vrchat.base",

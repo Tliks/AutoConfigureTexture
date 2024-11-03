@@ -26,6 +26,7 @@ namespace com.aoyon.AutoConfigureTexture
         public bool OptimizeTextureFormat = true;
         public FormatMode FormatMode = FormatMode.Balanced;
         public bool OptimizeMipMap = true;
+        public bool RunShaderOptimization = true;
         public Reduction ResolutionReduction = Reduction.Normal;
     }
 }
