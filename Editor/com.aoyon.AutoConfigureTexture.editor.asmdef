@@ -4,7 +4,8 @@
     "references": [
         "nadena.dev.ndmf",
         "net.rs64.tex-trans-tool.runtime",
-        "com.aoyon.AutoConfigureTexture.runtime"
+        "com.aoyon.AutoConfigureTexture.runtime",
+        "lilToon.Editor"
     ],
     "includePlatforms": [
         "Editor"
@@ -15,6 +16,18 @@
     "precompiledReferences": [],
     "autoReferenced": false,
     "defineConstraints": [],
-    "versionDefines": [],
+    "versionDefines": [
+        {
+            "name": "jp.lilxyzw.liltoon",
+            "expression": "",
+            "define": "HAS_lILTOON"
+        },
+        {
+        "name": "com.vrchat.base",
+        "expression": "",
+        "define": "HAS_HARMONY"
+        }
+    ],
+    
     "noEngineReferences": false
 }

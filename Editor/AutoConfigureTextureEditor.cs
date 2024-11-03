@@ -18,14 +18,17 @@ namespace com.aoyon.AutoConfigureTexture
             serializedObject.ApplyModifiedProperties();
         }
 
-        [MenuItem("CONTEXT/AutoConfigureTexture/Apply")]
-        private static void CustomMenuOption(MenuCommand command)
+        [MenuItem("CONTEXT/AutoConfigureTexture/Attach TextureConfigurator")]
+        private static void SetTextureConfigurator(MenuCommand command)
         {
-            var autoConfigureTexture = command.context as AutoConfigureTexture;
-            var go = CompressTextureProcessor.SetConfigurators(autoConfigureTexture, autoConfigureTexture.transform);
+            var component = command.context as AutoConfigureTexture;
+            var go = AttachConfigurators.Apply(component, component.transform);
             Selection.activeGameObject = go;
             EditorGUIUtility.PingObject(go);
-            DestroyImmediate(autoConfigureTexture);
+            component.OptimizeTextureFormat = false;
+            component.OptimizeMipMap = false;
+            component.ResizeTexture = false;
+            DestroyImmediate(component);
         }
     }
 }

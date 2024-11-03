@@ -14,10 +14,8 @@ namespace com.aoyon.AutoConfigureTexture
 
         protected override void Configure()
         {
-            var sequence =
-                InPhase(BuildPhase.Generating);
-            
-            sequence.Run(DisplayName, ctx =>
+            InPhase(BuildPhase.Generating).
+            Run("Attach TextureConfigurator", ctx =>
             {
                 var root = ctx.AvatarRootObject;
 
@@ -25,7 +23,8 @@ namespace com.aoyon.AutoConfigureTexture
 
                 foreach (var component in components)
                 {
-                    CompressTextureProcessor.SetConfigurators(component, root.transform);
+                    AttachConfigurators.Apply(component, root.transform);
+
                     Object.DestroyImmediate(component);
                 }
             });

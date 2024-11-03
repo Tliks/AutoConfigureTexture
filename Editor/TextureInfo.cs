@@ -27,7 +27,6 @@ namespace com.aoyon.AutoConfigureTexture
 
             Type = default;
             Format = default;
-
             Compression = default;
             CompressionQuality = default;
             sRGBTexture = default;

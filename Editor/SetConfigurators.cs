@@ -7,30 +7,36 @@ using net.rs64.TexTransTool;
 
 namespace com.aoyon.AutoConfigureTexture
 {    
-    public class CompressTextureProcessor
+    public class AttachConfigurators
     {
-        public static GameObject SetConfigurators(AutoConfigureTexture component, Transform paerent)
+        public static GameObject Apply(AutoConfigureTexture component, Transform paerent)
         {
             if (component == null || (component.OptimizeTextureFormat == false && component.OptimizeMipMap == false && component.ResizeTexture == false))
                 return null;
 
-            var infos = CollectTextureInfos(component.gameObject);
+            var materials = Utils.CollectMaterials(component.gameObject);
+            var infos = CollectTextureInfos(materials);
 
             var root = new GameObject("Auto Configure Texture");
             root.transform.SetParent(paerent);
 
             foreach (var info in infos)
             {
-                Texture teture = info.Texture;
+                var texture = info.Texture;
                 List<PropertyInfo> properties = info.Properties;
 
-                var go = new GameObject(teture.name);
+                if (!(texture is Texture2D tex2d))
+                {
+                    continue;
+                }
+
+                var go = new GameObject(tex2d.name);
                 go.transform.SetParent(root.transform, false);
                 var textureConfigurator = go.AddComponent<TextureConfigurator>();
-                var textureSelector = new TextureSelector(){ SelectTexture = (Texture2D)teture};
+                var textureSelector = new TextureSelector(){ SelectTexture = tex2d};
                 textureConfigurator.TargetTexture = textureSelector;
 
-                if (AdjustTextureResolution(teture, properties, out var resolution) && component.ResizeTexture)
+                if (AdjustTextureResolution(tex2d, properties, out var resolution) && component.ResizeTexture)
                 {
                     textureConfigurator.OverrideTextureSetting = true;
                 }
@@ -42,7 +48,7 @@ namespace com.aoyon.AutoConfigureTexture
                 }
                 textureConfigurator.MipMap = !removeMipMap;
 
-                if (AdjustTextureFormat(info, out var format) && component.OptimizeTextureFormat)
+                if (AdjustTextureFormat(info, tex2d, out var format) && component.OptimizeTextureFormat)
                 {
                     textureConfigurator.OverrideCompression = true;
                 }
@@ -56,14 +62,9 @@ namespace com.aoyon.AutoConfigureTexture
             return root;
         }
             
-        internal static List<TextureInfo> CollectTextureInfos(GameObject obj)
+        internal static List<TextureInfo> CollectTextureInfos(IEnumerable<Material> materials)
         {
             var textureInfos = new Dictionary<Texture, TextureInfo>();
-
-            var materials = obj.GetComponentsInChildren<Renderer>(true)
-                               .SelectMany(renderer => renderer.sharedMaterials)
-                               .Where(m => m != null)
-                               .ToHashSet();
 
             foreach (Material material in materials)
             {
@@ -96,7 +97,7 @@ namespace com.aoyon.AutoConfigureTexture
             return textureInfos.Values.ToList();
         }
 
-        internal static bool AdjustTextureResolution(Texture texture, List<PropertyInfo> propertyInfos, out int resolution)
+        internal static bool AdjustTextureResolution(Texture2D texture, List<PropertyInfo> propertyInfos, out int resolution)
         {
             int width = texture.width;
             int height = texture.height;
@@ -119,7 +120,7 @@ namespace com.aoyon.AutoConfigureTexture
             return resolution != width;
         }
 
-        internal static bool AdjustTextureFormat(TextureInfo info, out TextureFormat format)
+        internal static bool AdjustTextureFormat(TextureInfo info, Texture2D tex, out TextureFormat format)
         {
             var current = info.Format;
 
@@ -135,7 +136,7 @@ namespace com.aoyon.AutoConfigureTexture
                     {
                         format = current;
                     }
-                    else if (HasAlpha(info))
+                    else if (Utils.HasAlpha(tex))
                     {
                         format = TextureFormat.BC7;
                     }
@@ -185,52 +186,6 @@ namespace com.aoyon.AutoConfigureTexture
         {
             shouldRemove = info.Properties.All(p => PropertyDictionary.IsVertexShader(p.Shader, p.PropertyName));
             return shouldRemove;
-        }
-
-        private static bool HasAlpha(TextureInfo info, float alphaThreshold = 0.99f)
-        {
-            Texture2D texture = info.Texture as Texture2D;
-            if (!info.isReadable)
-            {
-                texture = CreateReadabeTexture2D(texture);
-            }
-
-            byte[] rawTextureData = texture.GetRawTextureData();
-            int alphaThresholdByte = (int)(alphaThreshold * 255);
-
-            int length = rawTextureData.Length / 4;
-            bool hasAlpha = false;
-
-            for (int i = 0; i < length; i++)
-            {
-                if (rawTextureData[i * 4 + 3] < alphaThresholdByte)
-                {
-                    hasAlpha = true;
-                    break;
-                }
-            }
-
-            return hasAlpha;
-        }
-
-        private static Texture2D CreateReadabeTexture2D(Texture2D texture2d)
-        {
-            RenderTexture renderTexture = RenderTexture.GetTemporary(
-                        texture2d.width,
-                        texture2d.height,
-                        0,
-                        RenderTextureFormat.Default,
-                        RenderTextureReadWrite.Linear);
-
-            Graphics.Blit(texture2d, renderTexture);
-            RenderTexture previous = RenderTexture.active;
-            RenderTexture.active = renderTexture;
-            Texture2D readableTextur2D = new Texture2D(texture2d.width, texture2d.height);
-            readableTextur2D.ReadPixels(new Rect(0, 0, renderTexture.width, renderTexture.height), 0, 0);
-            readableTextur2D.Apply();
-            RenderTexture.active = previous;
-            RenderTexture.ReleaseTemporary(renderTexture);
-            return readableTextur2D;
         }
 
     }

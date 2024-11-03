@@ -9,6 +9,7 @@ namespace com.aoyon.AutoConfigureTexture
     {
         public bool OptimizeTextureFormat = true;
         public bool OptimizeMipMap = true;
+        public bool RunShaderOptimization = true;
         public bool ResizeTexture = true;
     }
 }
