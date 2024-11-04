@@ -25,10 +25,8 @@ namespace com.aoyon.AutoConfigureTexture
             var go = AttachConfigurators.Apply(component, component.transform);
             Selection.activeGameObject = go;
             EditorGUIUtility.PingObject(go);
-            component.OptimizeTextureFormat = false;
-            component.OptimizeMipMap = false;
-            component.ResizeTexture = false;
-            DestroyImmediate(component);
+            // overrideしないのでコンポーネントは残す
+            //DestroyImmediate(component);
         }
     }
 }

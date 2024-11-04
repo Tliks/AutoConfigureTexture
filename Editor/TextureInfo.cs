@@ -35,18 +35,15 @@ namespace com.aoyon.AutoConfigureTexture
             MipmapEnabled = default;
             isReadable = default;
 
-            var importer = AssetImporter.GetAtPath(AssetDatabase.GetAssetPath(texture));
-            if (importer is not TextureImporter ti)
-            {
-                Debug.LogError($"invalid AssetImporter: {importer.GetType()}");
-                return;
-            }
-
             if (texture is Texture2D t)
             {
                 Type = typeof(Texture2D);
                 Format = t.format;
+            }
 
+            var importer = AssetImporter.GetAtPath(AssetDatabase.GetAssetPath(texture));
+            if (importer is TextureImporter ti)
+            {
                 Compression = ti.textureCompression; 
                 CompressionQuality = ti.compressionQuality;
                 sRGBTexture = ti.sRGBTexture;
@@ -54,10 +51,6 @@ namespace com.aoyon.AutoConfigureTexture
                 AlphaIsTransparency = ti.alphaIsTransparency;
                 MipmapEnabled = ti.mipmapEnabled;
                 isReadable = ti.isReadable;
-            }
-            else
-            {
-                Debug.LogWarning($"not supporting format: {texture.GetType()}");
             }
         }
 

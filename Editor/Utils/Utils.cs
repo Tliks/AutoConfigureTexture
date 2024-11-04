@@ -3,44 +3,55 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using nadena.dev.ndmf;
+using UnityEditor;
+using UnityEngine.Experimental.Rendering;
 
 namespace com.aoyon.AutoConfigureTexture
 {    
     public class Utils
-    {        
-        public static bool HasAlpha(Texture2D texture, float alphaThreshold = 0.99f)
+    {     
+        public static bool HasAlpha(Texture2D texture)
         {
-            texture = GetReadabeTexture2D(texture);
+            if (!GraphicsFormatUtility.HasAlphaChannel(texture.format))
+                return false;
 
-            byte[] rawTextureData = texture.GetRawTextureData();
-            int alphaThresholdByte = (int)(alphaThreshold * 255);
+            texture = EnsureReadableTexture2D(texture);
+            var span = texture.GetRawTextureData<Color32>().AsReadOnlySpan();
 
-            int length = rawTextureData.Length / 4;
             bool hasAlpha = false;
-
-            for (int i = 0; i < length; i++)
+            for (int i = 0; span.Length > i; i += 1)
             {
-                if (rawTextureData[i * 4 + 3] < alphaThresholdByte)
+                if (span[i].a != 255 && span[i].a != 254)
                 {
-                    hasAlpha = true;
-                    break;
+                    return true;
                 }
             }
-
             return hasAlpha;
         }
 
-        public static Texture2D GetReadabeTexture2D(Texture2D texture2d)
+        public static Texture2D EnsureReadableTexture2D(Texture2D texture2d)
         {
             if (texture2d.isReadable)
             {
                 return texture2d;
             }
 
-            return CopyTexture2D(texture2d);
+            return GetReadableTexture2D(texture2d);
         }
 
-        public static Texture2D CopyTexture2D(Texture2D texture2d)
+        public static Texture2D GetCopiedAndReadbleTexture2D(Texture2D texture2d)
+        {
+            if (texture2d.isReadable)
+            {
+                return UnityEngine.Object.Instantiate(texture2d);
+            }
+            else
+            {
+                return GetReadableTexture2D(texture2d);
+            }
+        } 
+
+        public static Texture2D GetReadableTexture2D(Texture2D texture2d)
         {
             RenderTexture renderTexture = RenderTexture.GetTemporary(
                         texture2d.width,
@@ -95,7 +106,7 @@ namespace com.aoyon.AutoConfigureTexture
 
         public static Texture2D CopyAndRegisterTexture2D(Texture2D original)
         {
-            var proxy = CopyTexture2D(original);
+            var proxy = GetCopiedAndReadbleTexture2D(original);
             ObjectRegistry.RegisterReplacedObject(original, proxy);
             return proxy;
         }
