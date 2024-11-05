@@ -150,7 +150,7 @@ namespace com.aoyon.AutoConfigureTexture
                     case TextureUsage.NormalMap:
                     case TextureUsage.Emission:
                     case TextureUsage.AOMap:
-                        return false;
+                        break;
                     case TextureUsage.NormalMapSub:
                     case TextureUsage.Others:
                         if (resolution > 512) resolution /= 2;
@@ -174,10 +174,6 @@ namespace com.aoyon.AutoConfigureTexture
                             {
                                 resolution /= 2;
                             }
-                        }
-                        else
-                        {
-                            return false;
                         }
                         break;
                     case TextureUsage.Emission:

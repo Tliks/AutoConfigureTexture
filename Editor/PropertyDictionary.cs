@@ -63,9 +63,6 @@ namespace com.aoyon.AutoConfigureTexture
 
         static Dictionary<string, PropertyData> lilToonProperty = new Dictionary<string, PropertyData>()
         {
-            //{ "_BaseMap",                new LilToonPropertyData(TextureChannel.None) }, // Dummy
-            //{ "_BaseColorMap",           new LilToonPropertyData(TextureChannel.None) }, // Dummy
-
             // https://lilxyzw.github.io/lilToon/ja_JP/color/maincolor.html メインカラー
             { "_MainTex",                new PropertyData(TextureChannel.RGB, TextureChannel.RGBA, TextureUsage.MainTex) }, // RGB/RGBA
             { "_MainGradationTex",       new PropertyData(TextureChannel.RGB) },
