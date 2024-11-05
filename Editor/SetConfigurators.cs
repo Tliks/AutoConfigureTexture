@@ -148,6 +148,7 @@ namespace com.aoyon.AutoConfigureTexture
                 {   
                     case TextureUsage.MainTex:
                     case TextureUsage.NormalMap:
+                    case TextureUsage.Emission:
                     case TextureUsage.AOMap:
                         return false;
                     case TextureUsage.NormalMapSub:
@@ -179,6 +180,9 @@ namespace com.aoyon.AutoConfigureTexture
                             return false;
                         }
                         break;
+                    case TextureUsage.Emission:
+                        if (resolution > 512) resolution /= 2;
+                        break;
                     case TextureUsage.AOMap:
                     case TextureUsage.NormalMapSub:
                     case TextureUsage.Others:
@@ -200,6 +204,7 @@ namespace com.aoyon.AutoConfigureTexture
                     case TextureUsage.NormalMap:
                         if (resolution > 512) resolution /= 2;
                         break;
+                    case TextureUsage.Emission:
                     case TextureUsage.AOMap:
                     case TextureUsage.NormalMapSub:
                     case TextureUsage.Others:
@@ -216,7 +221,8 @@ namespace com.aoyon.AutoConfigureTexture
 
             return resolution != width;
             
-            // MainTex > NormalMap >= AOMap > NormalMapSub > Others > MatCap
+            // primaryでない使用用途を全て無視しているのでもう少し良い取り扱い方はしたい
+            // MainTex > NormalMap > Emission > AOMap > NormalMapSub > Others > MatCap
             TextureUsage GetPrimaryUsage(IEnumerable<TextureUsage> usages)
             {
                 if (usages.Contains(TextureUsage.MainTex)){
@@ -224,6 +230,9 @@ namespace com.aoyon.AutoConfigureTexture
                 }
                 else if (usages.Contains(TextureUsage.NormalMap)){
                     return TextureUsage.NormalMap;
+                }
+                else if (usages.Contains(TextureUsage.Emission)){
+                    return TextureUsage.Emission;
                 }
                 else if (usages.Contains(TextureUsage.AOMap)){
                     return TextureUsage.AOMap;

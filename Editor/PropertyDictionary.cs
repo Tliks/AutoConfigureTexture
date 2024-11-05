@@ -12,6 +12,7 @@ namespace com.aoyon.AutoConfigureTexture
         NormalMapSub, // メインのNormalMapと区別
         AOMap,
         MatCap,
+        Emission,
         Others
     }
 
@@ -98,11 +99,11 @@ namespace com.aoyon.AutoConfigureTexture
             { "_RimShadeMask",           new PropertyData(TextureChannel.R) }, // lilMaterialPropertyでisTex:false
 
             // https://lilxyzw.github.io/lilToon/ja_JP/color/emission.html 発光
-            { "_EmissionMap",            new PropertyData(TextureChannel.RGB) }, // 多分RGB
+            { "_EmissionMap",            new PropertyData(TextureChannel.RGB, TextureUsage.Emission) }, // 多分RGB
             { "_EmissionBlendMask",      new PropertyData(TextureChannel.RGBA) }, // マスク RGBA
             { "_EmissionGradTex",        new PropertyData(TextureChannel.RGB) }, // 多分RGB
             // 1と同じ
-            { "_Emission2ndMap",         new PropertyData(TextureChannel.RGB) },
+            { "_Emission2ndMap",         new PropertyData(TextureChannel.RGB, TextureUsage.Emission) },
             { "_Emission2ndBlendMask",   new PropertyData(TextureChannel.RGBA) },
             { "_Emission2ndGradTex",     new PropertyData(TextureChannel.RGB) },
 
