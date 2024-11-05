@@ -218,6 +218,34 @@ namespace com.aoyon.AutoConfigureTexture
                         break;
                 }
             }
+            else if (reduction == Reduction.Ultra)
+            {
+                switch (usage)
+                {   
+                    case TextureUsage.MainTex:
+                    case TextureUsage.NormalMap:
+                        if (resolution > 512)
+                        {
+                            resolution = Mathf.Max(resolution / 4, 512);
+                        }
+                        break;
+                    case TextureUsage.Emission:
+                    case TextureUsage.AOMap:
+                    case TextureUsage.NormalMapSub:
+                    case TextureUsage.Others:
+                        if (resolution > 256)
+                        {
+                            resolution = Mathf.Max(resolution / 4, 256);
+                        }
+                        break;
+                    case TextureUsage.MatCap:
+                        if (resolution > 128)
+                        {
+                            resolution = Mathf.Max(resolution / 4, 128);
+                        }
+                        break;
+                }
+            }
 
             return resolution != width;
             

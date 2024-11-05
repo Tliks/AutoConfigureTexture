@@ -9,6 +9,7 @@ namespace com.aoyon.AutoConfigureTexture
         Low,
         Normal,
         High,
+        Ultra
     }
 
     [AddComponentMenu("Auto Configure Texture/Auto Configure Texture")]
