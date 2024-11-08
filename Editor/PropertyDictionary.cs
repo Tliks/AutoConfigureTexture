@@ -137,7 +137,6 @@ namespace com.aoyon.AutoConfigureTexture
 
             // https://lilxyzw.github.io/lilToon/ja_JP/reflections/glitter.html ラメ
             { "_GlitterColorTex",        new PropertyData(TextureChannel.None) }, // HDR
-            { "_GlitterColorTex_UVMode", new PropertyData(TextureChannel.None) }, // HDR
             { "_GlitterShapeTex",        new PropertyData(TextureChannel.RGBA) }, // RGBA
 
             // https://lilxyzw.github.io/lilToon/ja_JP/advanced/outline.html 輪郭線

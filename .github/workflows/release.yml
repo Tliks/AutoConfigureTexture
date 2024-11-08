@@ -35,18 +35,13 @@ jobs:
       - name: Set Environment Variables
         run: |
           echo "zipFile=${{ steps.name.outputs.value }}-${{ steps.version.outputs.value }}".zip >> $GITHUB_ENV
-          echo "unityPackage=${{ steps.name.outputs.value }}-${{ steps.version.outputs.value }}.unitypackage" >> $GITHUB_ENV
           echo "version=${{ steps.version.outputs.value }}" >> $GITHUB_ENV
 
       # Zip the Package for release
       - name: Create Package Zip
         working-directory: "${{ env.packagePath }}"
         run: zip -r "${{ github.workspace }}/${{ env.zipFile }}" . -x '.*' '*/.*'
-      
-      # Build a list of .meta files for future use
-      - name: Track Package Meta Files
-        run: find "${{ env.packagePath }}/" -name \*.meta >> metaList
-             
+
       # Make a release tag of the version from the package.json file 
       - name: Create Tag
         id: tag_version
@@ -71,5 +66,4 @@ jobs:
           workflow: build-listing.yml
           repo: Tliks/vpm-repos
           token: ${{ secrets.DISPATCH_TOKEN }}
-          ref: main
-      
+          ref: main      

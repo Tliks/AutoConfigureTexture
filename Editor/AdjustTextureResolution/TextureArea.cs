@@ -6,13 +6,13 @@ using VRC.SDK3.Avatars.Components;
 
 namespace com.aoyon.AutoConfigureTexture
 {
-    public class MaterialArea
+    public class TextureArea
     {
         private readonly Vector3 _worldViewPos;
         private readonly IEnumerable<Renderer> _renderers;
         private Dictionary<Renderer, Mesh> _meshes = new Dictionary<Renderer, Mesh>();
 
-        public MaterialArea(Transform root)
+        public TextureArea(Transform root)
         {
             var descriptor = root.GetComponentInParent<VRCAvatarDescriptor>();
             if (descriptor == null) throw new InvalidOperationException();
@@ -26,21 +26,17 @@ namespace com.aoyon.AutoConfigureTexture
                 .Where(r => r is SkinnedMeshRenderer or MeshRenderer);
         }
 
-        public bool IsUnderHeight(IEnumerable<Material> materials, float thresholdRatio)
-        {
-            return materials.All(m => IsUnderHeight(m, thresholdRatio));
-        }
-
-        public bool IsUnderHeight(Material material, float thresholdRatio)
+        public bool IsUnderHeight(TextureInfo info, float thresholdRatio)
         {
             var height = _worldViewPos.y * thresholdRatio;
+            var material = info.Properties.First().Material;
 
             foreach (var renderer in _renderers)
             {
                 var subMeshIndex = GetSubmeshIndex(renderer, material);
                 if (subMeshIndex == -1) continue;
 
-                var mesh = GetMesh(renderer, _meshes);
+                var mesh = GetMesh(renderer);
                 if (mesh == null) continue;
 
                 if (!IsMeshUnderHeight(renderer.transform, mesh, subMeshIndex, height)) 
@@ -49,26 +45,26 @@ namespace com.aoyon.AutoConfigureTexture
             return true;
         }
 
-        private static Mesh GetMesh(Renderer renderer, Dictionary<Renderer, Mesh> meshes)
+        private Mesh GetMesh(Renderer renderer)
         {
             if (renderer is SkinnedMeshRenderer skinnedMeshRenderer)
             {
-                if (!meshes.TryGetValue(skinnedMeshRenderer, out var bakedMesh))
+                if (!_meshes.TryGetValue(skinnedMeshRenderer, out var bakedMesh))
                 {
                     if (skinnedMeshRenderer.sharedMesh == null) return null;
                     bakedMesh = new Mesh();
                     skinnedMeshRenderer.BakeMesh(bakedMesh, true);
-                    meshes.Add(skinnedMeshRenderer, bakedMesh);
+                    _meshes.Add(skinnedMeshRenderer, bakedMesh);
                 }
                 return bakedMesh;
             }
             else if (renderer is MeshRenderer meshRenderer)
             {
-                if (!meshes.TryGetValue(meshRenderer, out var mesh))
+                if (!_meshes.TryGetValue(meshRenderer, out var mesh))
                 {
                     mesh = meshRenderer.GetComponent<MeshFilter>()?.sharedMesh;
                     if (mesh == null) return null;
-                    meshes.Add(meshRenderer, mesh);
+                    _meshes.Add(meshRenderer, mesh);
                 }
                 return mesh;
             }

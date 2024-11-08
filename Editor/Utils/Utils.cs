@@ -9,14 +9,31 @@ using UnityEngine.Experimental.Rendering;
 namespace com.aoyon.AutoConfigureTexture
 {    
     public class Utils
-    {     
+    {    
         public static bool HasAlpha(Texture2D texture)
         {
             if (!GraphicsFormatUtility.HasAlphaChannel(texture.format))
                 return false;
 
-            texture = EnsureReadableTexture2D(texture);
-            var span = texture.GetRawTextureData<Color32>().AsReadOnlySpan();
+            var readableTexture = EnsureReadableTexture2D(texture);
+            return HasAlphaInData(readableTexture);
+        }
+
+        // TextureInfoにキャッシュする方
+        // 基本的にこっちを使いたい
+        public static bool HasAlpha(TextureInfo info)
+        {
+            var texture = info.Texture as Texture2D;
+            if (!GraphicsFormatUtility.HasAlphaChannel(texture.format))
+                return false;
+
+            var readableTexture = info.AssignReadbleTexture2D();
+            return HasAlphaInData(readableTexture);
+        }
+
+        private static bool HasAlphaInData(Texture2D readableTexture)
+        {
+            var span = readableTexture.GetRawTextureData<Color32>().AsReadOnlySpan();
 
             bool hasAlpha = false;
             for (int i = 0; span.Length > i; i += 1)
@@ -38,18 +55,6 @@ namespace com.aoyon.AutoConfigureTexture
 
             return GetReadableTexture2D(texture2d);
         }
-
-        public static Texture2D GetCopiedAndReadbleTexture2D(Texture2D texture2d)
-        {
-            if (texture2d.isReadable)
-            {
-                return UnityEngine.Object.Instantiate(texture2d);
-            }
-            else
-            {
-                return GetReadableTexture2D(texture2d);
-            }
-        } 
 
         public static Texture2D GetReadableTexture2D(Texture2D texture2d)
         {
@@ -104,11 +109,23 @@ namespace com.aoyon.AutoConfigureTexture
             return proxy;
         }
 
-        public static Texture2D CopyAndRegisterTexture2D(Texture2D original)
+        public static Texture2D CopyAndRegisterTexture(Texture2D original)
         {
-            var proxy = GetCopiedAndReadbleTexture2D(original);
+            var proxy = CopyTexture2D(original);
             ObjectRegistry.RegisterReplacedObject(original, proxy);
             return proxy;
+        }
+
+        public static Texture2D CopyTexture2D(Texture2D texture2d)
+        {
+            if (texture2d.isReadable)
+            {
+                return UnityEngine.Object.Instantiate(texture2d);
+            }
+            else
+            {
+                return GetReadableTexture2D(texture2d);
+            }
         }
 
         public static bool IsOpaqueMaterial(Material material)
@@ -130,6 +147,10 @@ namespace com.aoyon.AutoConfigureTexture
                 .All(tag => tag.name == "Opaque");
             return isOpaque;
         }
- 
+
+        public static void Assert(bool condition)
+        {
+            if (!condition) throw new InvalidOperationException("assertion failed");
+        } 
     }
 }

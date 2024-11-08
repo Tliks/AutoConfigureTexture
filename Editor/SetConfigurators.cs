@@ -22,18 +22,15 @@ namespace com.aoyon.AutoConfigureTexture
 
             var root = new GameObject("Auto Configure Texture");
             root.transform.SetParent(paerent);
-
-            MaterialArea materialArea = null;
-            if (component.ResolutionReduction != Reduction.None)
-                materialArea = new MaterialArea(component.transform);
-
+        
             var materials = Utils.CollectMaterials(component.gameObject);
-            var infos = CollectTextureInfos(materials);
+            var infos = TextureInfo.Collect(materials);
+
+            AdjustTextureResolution adjuster = new AdjustTextureResolution(component.transform);;
 
             foreach (var info in infos)
             {
                 var texture = info.Texture;
-                List<PropertyInfo> properties = info.Properties;
 
                 // Texture2D以外は現状何もしない
                 if (texture is not Texture2D tex2d) continue;
@@ -48,234 +45,41 @@ namespace com.aoyon.AutoConfigureTexture
                 textureConfigurator.TargetTexture = textureSelector;
 
                 // 解像度の変更を試す
-                if (AdjustTextureResolution(tex2d, properties, component.ResolutionReduction, materialArea, out var resolution))
+                if (adjuster.Apply(info, component.ResolutionReduction, out var resolution))
                 {
                     textureConfigurator.OverrideTextureSetting = true;
+                    textureConfigurator.TextureSize = resolution;
                 }
-                textureConfigurator.TextureSize = resolution;
 
                 // MipMapのオフを試す
-                if (RemoveMipMap(info, out var removeMipMap) && component.OptimizeMipMap)
+                if (component.OptimizeMipMap && RemoveMipMap(info, out var removeMipMap))
                 {
                     textureConfigurator.OverrideTextureSetting = true;
+                    textureConfigurator.MipMap = !removeMipMap;
                 }
-                textureConfigurator.MipMap = !removeMipMap;
 
                 // 圧縮形式の変更を試す
-                if (AdjustTextureFormat(info, tex2d, out var format) && component.OptimizeTextureFormat)
+                if (component.OptimizeTextureFormat && AdjustTextureFormat(info, tex2d, out var format))
                 {
                     textureConfigurator.OverrideCompression = true;
+                    var compressionSetting = textureConfigurator.CompressionSetting;
+                    compressionSetting.UseOverride = true;
+                    compressionSetting.OverrideTextureFormat = format;
                 }
-                var compressionSetting = textureConfigurator.CompressionSetting;
-                compressionSetting.UseOverride = true;
-                compressionSetting.OverrideTextureFormat = format;
             }
 
             Undo.RegisterCreatedObjectUndo(root, "Auto Configure Texture Setup");
 
             return root;
         }
-            
-        internal static List<TextureInfo> CollectTextureInfos(IEnumerable<Material> materials)
+
+        internal static bool RemoveMipMap(TextureInfo info, out bool shouldRemove)
         {
-            var textureInfos = new Dictionary<Texture, TextureInfo>();
-
-            foreach (Material material in materials)
-            {
-                Shader shader = material.shader;
-
-                int propertyCount = ShaderUtil.GetPropertyCount(shader);
-                for (int i = 0; i < propertyCount; i++)
-                {
-                    ShaderUtil.ShaderPropertyType propertyType = ShaderUtil.GetPropertyType(shader, i);
-                    if (propertyType != ShaderUtil.ShaderPropertyType.TexEnv)
-                        continue;
-                        
-                    string propertyName = ShaderUtil.GetPropertyName(shader, i);
-
-                    Texture texture = material.GetTexture(propertyName);
-                    if (texture == null)
-                        continue;
-
-                    if (!textureInfos.TryGetValue(texture, out var textureInfo))
-                    {
-                        textureInfo = new TextureInfo(texture);
-                        textureInfos[texture] = textureInfo;
-                    }
-
-                    var propertyInfo = new PropertyInfo(material, shader, propertyName);
-                    textureInfo.AddProperty(propertyInfo);
-                }
-            }
-
-            return textureInfos.Values.ToList();
+            // 頂点シェーダーとしてのみ用いられている場合MipMapをオフ
+            shouldRemove = info.Properties.All(p => PropertyDictionary.IsVertexShader(p.Shader, p.PropertyName) == true);
+            return shouldRemove;
         }
-
-        internal static bool AdjustTextureResolution(Texture2D texture, List<PropertyInfo> propertyInfos, Reduction reduction, MaterialArea materialArea, out int resolution)
-        {
-            int width = texture.width;
-            int height = texture.height;
-            resolution = width;
-
-            if (reduction == Reduction.None)
-                return false;
-
-            if (width != height)
-            {
-                Debug.LogWarning("width is not same as height");
-                return false;
-            }
-
-            // 不明な使用用途は無視し既知の情報のみで判断
-            // パターン1: lilToonのみで不明プロパティが含まれていた場合
-            //            重要なプロパティは抑えてると思われるため不明プロパティは無視
-            // パターン2: lilToon以外のみの場合
-            //           _MainTexのみusageとして返るが、それ以外で不明プロパティのみの場合は何もしない
-            // パターン3: lilToonとそれ以外が混じっている場合
-            //           lilToonの情報のみで処理されるためlilToon以外で重要な使用プロパティだった場合顕劣化が想定されるが、エッジケースなのでここでは想定しない
-            var usages = propertyInfos
-                .Select(info => PropertyDictionary.GetTextureUsage(info.Shader, info.PropertyName))
-                .OfType<TextureUsage>();
-            // 不明プロパティのみの場合は何もしない
-            if (!usages.Any())
-                return false;
-
-            var usage = GetPrimaryUsage(usages);
-
-            if (reduction == Reduction.Low)
-            {
-                switch (usage)
-                {   
-                    case TextureUsage.MainTex:
-                    case TextureUsage.NormalMap:
-                    case TextureUsage.Emission:
-                    case TextureUsage.AOMap:
-                        break;
-                    case TextureUsage.NormalMapSub:
-                    case TextureUsage.Others:
-                        if (resolution > 512) resolution /= 2;
-                        break;
-                    case TextureUsage.MatCap:
-                        if (resolution > 256) resolution /= 2;
-                        break;
-                }
-            }
-            else if (reduction == Reduction.Normal)
-            {
-                switch (usage)
-                {   
-                    case TextureUsage.MainTex:
-                    case TextureUsage.NormalMap:
-                        if (resolution > 512)
-                        {
-                            var materials = propertyInfos.Select(info => info.Material);
-                            bool isUnderHips = materialArea.IsUnderHeight(materials, 0.5f);
-                            if (isUnderHips)
-                            {
-                                resolution /= 2;
-                            }
-                        }
-                        break;
-                    case TextureUsage.Emission:
-                        if (resolution > 512) resolution /= 2;
-                        break;
-                    case TextureUsage.AOMap:
-                    case TextureUsage.NormalMapSub:
-                    case TextureUsage.Others:
-                        if (resolution > 512)
-                        {
-                            resolution = Mathf.Max(resolution / 4, 512);
-                        }
-                        break;
-                    case TextureUsage.MatCap:
-                        if (resolution > 256) resolution /= 2;
-                        break;
-                }
-            }
-            else if (reduction == Reduction.High)
-            {
-                switch (usage)
-                {   
-                    case TextureUsage.MainTex:
-                    case TextureUsage.NormalMap:
-                        if (resolution > 512) resolution /= 2;
-                        break;
-                    case TextureUsage.Emission:
-                    case TextureUsage.AOMap:
-                    case TextureUsage.NormalMapSub:
-                    case TextureUsage.Others:
-                        if (resolution > 512)
-                        {
-                            resolution = Mathf.Max(resolution / 4, 512);
-                        }
-                        break;
-                    case TextureUsage.MatCap:
-                        if (resolution > 256) resolution /= 2;
-                        break;
-                }
-            }
-            else if (reduction == Reduction.Ultra)
-            {
-                switch (usage)
-                {   
-                    case TextureUsage.MainTex:
-                    case TextureUsage.NormalMap:
-                        if (resolution > 512)
-                        {
-                            resolution = Mathf.Max(resolution / 4, 512);
-                        }
-                        break;
-                    case TextureUsage.Emission:
-                    case TextureUsage.AOMap:
-                    case TextureUsage.NormalMapSub:
-                    case TextureUsage.Others:
-                        if (resolution > 256)
-                        {
-                            resolution = Mathf.Max(resolution / 4, 256);
-                        }
-                        break;
-                    case TextureUsage.MatCap:
-                        if (resolution > 128)
-                        {
-                            resolution = Mathf.Max(resolution / 4, 128);
-                        }
-                        break;
-                }
-            }
-
-            return resolution != width;
-            
-            // primaryでない使用用途を全て無視しているのでもう少し良い取り扱い方はしたい
-            // MainTex > NormalMap > Emission > AOMap > NormalMapSub > Others > MatCap
-            TextureUsage GetPrimaryUsage(IEnumerable<TextureUsage> usages)
-            {
-                if (usages.Contains(TextureUsage.MainTex)){
-                    return TextureUsage.MainTex;
-                }
-                else if (usages.Contains(TextureUsage.NormalMap)){
-                    return TextureUsage.NormalMap;
-                }
-                else if (usages.Contains(TextureUsage.Emission)){
-                    return TextureUsage.Emission;
-                }
-                else if (usages.Contains(TextureUsage.AOMap)){
-                    return TextureUsage.AOMap;
-                }
-                else if (usages.Contains(TextureUsage.NormalMapSub)){
-                    return TextureUsage.NormalMapSub;
-                }
-                else if (usages.Contains(TextureUsage.Others)){
-                    return TextureUsage.Others;
-                }
-                else if (usages.Contains(TextureUsage.MatCap)){
-                    return TextureUsage.MatCap;
-                }
-                else{
-                    throw new InvalidOperationException();
-                }
-            }
-        }
-
+        
         // Todo: MSDFなど圧縮してはいけないテクスチャを除外できていない
         internal static bool AdjustTextureFormat(TextureInfo info, Texture2D tex, out TextureFormat format)
         {
@@ -296,8 +100,9 @@ namespace com.aoyon.AutoConfigureTexture
                     {
                         format = current;
                     }
-                    else if (Utils.HasAlpha(tex))
+                    else if (Utils.HasAlpha(info))
                     {
+                        var texture = Utils.EnsureReadableTexture2D(tex);
                         format = TextureFormat.BC7;
                     }
                     else
@@ -341,13 +146,6 @@ namespace com.aoyon.AutoConfigureTexture
             }
 
             return current != format;
-        }
-
-        internal static bool RemoveMipMap(TextureInfo info, out bool shouldRemove)
-        {
-            // 頂点シェーダーとしてのみ用いられている場合MipMapをオフ
-            shouldRemove = info.Properties.All(p => PropertyDictionary.IsVertexShader(p.Shader, p.PropertyName) == true);
-            return shouldRemove;
         }
 
     }

@@ -2,10 +2,11 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
+using System.Linq;
 
 namespace com.aoyon.AutoConfigureTexture
 {
-    internal readonly struct TextureInfo
+    public class TextureInfo
     {
         public readonly Texture Texture;
         public readonly List<PropertyInfo> Properties;
@@ -19,6 +20,8 @@ namespace com.aoyon.AutoConfigureTexture
         public readonly bool AlphaIsTransparency;
         public readonly bool MipmapEnabled;
         public readonly bool isReadable;
+
+        private Texture2D _readableTexture;
 
         public TextureInfo(Texture texture)
         {
@@ -54,22 +57,72 @@ namespace com.aoyon.AutoConfigureTexture
             }
         }
 
-        public void AddProperty(PropertyInfo propertyInfo)
+        internal void AddProperty(PropertyInfo propertyInfo)
         {
             Properties.Add(propertyInfo);
         }
+
+        // todo 何とかしてUVチャンネルを取得する
+        public static List<TextureInfo> Collect(IEnumerable<Material> materials)
+        {
+            var textureInfos = new Dictionary<Texture, TextureInfo>();
+
+            foreach (Material material in materials)
+            {
+                Shader shader = material.shader;
+
+                int propertyCount = ShaderUtil.GetPropertyCount(shader);
+                for (int i = 0; i < propertyCount; i++)
+                {
+                    ShaderUtil.ShaderPropertyType propertyType = ShaderUtil.GetPropertyType(shader, i);
+                    if (propertyType != ShaderUtil.ShaderPropertyType.TexEnv)
+                        continue;
+                        
+                    string propertyName = ShaderUtil.GetPropertyName(shader, i);
+
+                    Texture texture = material.GetTexture(propertyName);
+                    if (texture == null)
+                        continue;
+
+                    if (!textureInfos.TryGetValue(texture, out var textureInfo))
+                    {
+                        textureInfo = new TextureInfo(texture);
+                        textureInfos[texture] = textureInfo;
+                    }
+
+                    // UVチャンネルは仮
+                    var propertyInfo = new PropertyInfo(material, shader, propertyName, 0);
+                    textureInfo.AddProperty(propertyInfo);
+                }
+            }
+
+            return textureInfos.Values.ToList();
+        }
+
+        public Texture2D AssignReadbleTexture2D()
+        {
+            if (_readableTexture != null) {
+                return _readableTexture;
+            }
+            else {
+                _readableTexture = Utils.EnsureReadableTexture2D(Texture as Texture2D);
+                return _readableTexture;
+            } 
+        }
     }
 
-    internal readonly struct PropertyInfo
+    public readonly struct PropertyInfo
     {
         public readonly Material Material;
         public readonly Shader Shader; 
         public readonly string PropertyName;
-        public PropertyInfo(Material material, Shader shader, string propertyName)
+        public readonly int UVchannel;
+        public PropertyInfo(Material material, Shader shader, string propertyName, int uvchannel)
         {
             Material = material;
             Shader = shader;
             PropertyName = propertyName;
+            UVchannel = uvchannel;
         }
     }
 }
