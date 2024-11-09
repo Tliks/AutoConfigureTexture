@@ -43,7 +43,16 @@ namespace com.aoyon.AutoConfigureTexture
                 var go = new GameObject(tex2d.name);
                 go.transform.SetParent(root.transform, false);
                 var textureConfigurator = go.AddComponent<TextureConfigurator>();
-                var textureSelector = new TextureSelector(){ SelectTexture = tex2d};
+
+                var textureSelector = new TextureSelector();
+                textureSelector.Mode = TextureSelector.SelectMode.Relative;
+                // 代表のプロパティ, Renderer, Material
+                var property = properties.First();
+                var materialInfo = property.MaterialInfo;
+                textureSelector.RendererAsPath = materialInfo.Renderers.First();
+                textureSelector.SlotAsPath = materialInfo.MaterialIndices.First();
+                var propertyName = new net.rs64.TexTransTool.PropertyName(property.PropertyName);
+                textureSelector.PropertyNameAsPath = propertyName;
                 textureConfigurator.TargetTexture = textureSelector;
 
                 // 解像度の変更を試す
