@@ -16,7 +16,7 @@ namespace com.aoyon.AutoConfigureTexture
 
             // 既にTextureConfiguratorを設定しているテクスチャを取得
             var exists = component.GetComponentsInChildren<TextureConfigurator>()
-                .Select(c => c.TargetTexture.SelectTexture)
+                .Select(c => c.TargetTexture.GetTexture()) // TTTInternal
                 .Where(t => t != null)
                 .ToHashSet();
 
