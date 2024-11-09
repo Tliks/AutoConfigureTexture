@@ -9,7 +9,7 @@
     "url": "https://github.com/Tliks"
   },
   "url": "https://github.com/Tliks/AutoConfigureTexture",
-  "changelogUrl": "https://github.com/Tliks/AutoConfigureTexture/blob/main/CHANGELOG.md",
+  "changelogUrl": "https://github.com/Tliks/AutoConfigureTexture/blob/dev/CHANGELOG.md",
   "documentationUrl": "https://tliks.github.io/aoyon-docs/",
   "vpmDependencies": {
     "nadena.dev.ndmf": ">=1.5.0",
