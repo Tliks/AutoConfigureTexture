@@ -27,8 +27,7 @@ namespace com.aoyon.AutoConfigureTexture
             if (component.ResolutionReduction != Reduction.None)
                 materialArea = new MaterialArea(component.transform);
 
-            var materials = Utils.CollectMaterials(component.gameObject);
-            var infos = CollectTextureInfos(materials);
+            var infos = TextureInfo.Collect(component.gameObject);
 
             foreach (var info in infos)
             {
@@ -76,41 +75,6 @@ namespace com.aoyon.AutoConfigureTexture
             return root;
         }
             
-        internal static List<TextureInfo> CollectTextureInfos(IEnumerable<Material> materials)
-        {
-            var textureInfos = new Dictionary<Texture, TextureInfo>();
-
-            foreach (Material material in materials)
-            {
-                Shader shader = material.shader;
-
-                int propertyCount = ShaderUtil.GetPropertyCount(shader);
-                for (int i = 0; i < propertyCount; i++)
-                {
-                    ShaderUtil.ShaderPropertyType propertyType = ShaderUtil.GetPropertyType(shader, i);
-                    if (propertyType != ShaderUtil.ShaderPropertyType.TexEnv)
-                        continue;
-                        
-                    string propertyName = ShaderUtil.GetPropertyName(shader, i);
-
-                    Texture texture = material.GetTexture(propertyName);
-                    if (texture == null)
-                        continue;
-
-                    if (!textureInfos.TryGetValue(texture, out var textureInfo))
-                    {
-                        textureInfo = new TextureInfo(texture);
-                        textureInfos[texture] = textureInfo;
-                    }
-
-                    var propertyInfo = new PropertyInfo(material, shader, propertyName);
-                    textureInfo.AddProperty(propertyInfo);
-                }
-            }
-
-            return textureInfos.Values.ToList();
-        }
-
         internal static bool AdjustTextureResolution(Texture2D texture, List<PropertyInfo> propertyInfos, Reduction reduction, MaterialArea materialArea, out int resolution)
         {
             int width = texture.width;
@@ -168,7 +132,7 @@ namespace com.aoyon.AutoConfigureTexture
                     case TextureUsage.NormalMap:
                         if (resolution > 512)
                         {
-                            var materials = propertyInfos.Select(info => info.Material);
+                            var materials = propertyInfos.Select(info => info.MaterialInfo.Material);
                             bool isUnderHips = materialArea.IsUnderHeight(materials, 0.5f);
                             if (isUnderHips)
                             {
