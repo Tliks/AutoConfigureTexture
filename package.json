@@ -1,7 +1,7 @@
 {
   "name": "com.aoyon.auto-configure-texture",
   "displayName": "Auto Configure Texture",
-  "version": "0.1.0",
+  "version": "0.1.2",
   "unity": "2022.3",
   "description": "Easy VRAM Reduction, Non-Destructively",
   "author": {
@@ -9,10 +9,10 @@
     "url": "https://github.com/Tliks"
   },
   "url": "https://github.com/Tliks/AutoConfigureTexture",
-  "changelogUrl": "https://github.com/Tliks/AutoConfigureTexture/blob/main/CHANGELOG.md",
+  "changelogUrl": "https://github.com/Tliks/AutoConfigureTexture/blob/dev/CHANGELOG.md",
   "documentationUrl": "https://tliks.github.io/aoyon-docs/",
   "vpmDependencies": {
     "nadena.dev.ndmf": ">=1.5.0",
-    "net.rs64.tex-trans-tool": ">=0.8.0"
+    "net.rs64.tex-trans-tool": "0.8.4 || 0.9.0-beta.0"
   }
 }

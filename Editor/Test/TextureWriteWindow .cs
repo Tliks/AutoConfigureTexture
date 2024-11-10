@@ -48,17 +48,8 @@ namespace com.aoyon.AutoConfigureTexture.Test
                     return;
                 }
 
-                var targetMaterial = _targetRenderer.sharedMaterials[0];
-
                 var textureinfo = new TextureInfo(_targetTexture);
                 var texture = textureinfo.AssignReadbleTexture2D();
-
-                textureinfo.AddProperty(new PropertyInfo(
-                    material : targetMaterial,
-                    shader : default,
-                    propertyName : default,
-                    uvchannel : 0
-                ));
 
                 var islands = _islandHandler.GetIslands(_targetRenderer.sharedMesh, 0, 0);
 

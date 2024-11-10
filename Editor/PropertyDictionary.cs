@@ -68,7 +68,7 @@ namespace com.aoyon.AutoConfigureTexture
             { "_MainGradationTex",       new PropertyData(TextureChannel.RGB) },
             { "_MainColorAdjustMask",    new PropertyData(TextureChannel.R) },
             // https://lilxyzw.github.io/lilToon/ja_JP/color/maincolor_layer.html 2ndカラー
-            { "_Main2ndTex",             new PropertyData(TextureChannel.RGB, TextureChannel.RGBA, TextureUsage.MainTex) }, //RGB/RGBA
+            { "_Main2ndTex",             new PropertyData(TextureChannel.RGBA, TextureUsage.MainTex) }, //RGB/RGBA
             { "_Main2ndBlendMask",       new PropertyData(TextureChannel.R) },
 
             // https://lilxyzw.github.io/lilToon/ja_JP/advanced/dissolve.html 2ndカラー(Dissolve)
@@ -76,7 +76,7 @@ namespace com.aoyon.AutoConfigureTexture
             { "_Main2ndDissolveNoiseMask",new PropertyData(TextureChannel.R) },
 
             // 2ndと同じ 3rdカラー
-            { "_Main3rdTex",             new PropertyData(TextureChannel.RGB, TextureChannel.RGBA, TextureUsage.MainTex) }, // RGB/RGBA
+            { "_Main3rdTex",             new PropertyData(TextureChannel.RGBA, TextureUsage.MainTex) }, // RGB/RGBA
             { "_Main3rdBlendMask",       new PropertyData(TextureChannel.R) }, 
             { "_Main3rdDissolveMask",    new PropertyData(TextureChannel.R) },
             { "_Main3rdDissolveNoiseMask",new PropertyData(TextureChannel.R) },

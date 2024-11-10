@@ -16,21 +16,21 @@ namespace com.aoyon.AutoConfigureTexture
 
             // 既にTextureConfiguratorを設定しているテクスチャを取得
             var exists = component.GetComponentsInChildren<TextureConfigurator>()
-                .Select(c => c.TargetTexture.SelectTexture)
+                .Select(c => c.TargetTexture.GetTexture()) // TTTInternal
                 .Where(t => t != null)
                 .ToHashSet();
 
             var root = new GameObject("Auto Configure Texture");
             root.transform.SetParent(paerent);
         
-            var materials = Utils.CollectMaterials(component.gameObject);
-            var infos = TextureInfo.Collect(materials);
+            var infos = TextureInfo.Collect(component.gameObject);
 
             AdjustTextureResolution adjuster = new AdjustTextureResolution(component.transform);;
 
             foreach (var info in infos)
             {
                 var texture = info.Texture;
+                var properties = info.Properties;
 
                 // Texture2D以外は現状何もしない
                 if (texture is not Texture2D tex2d) continue;
@@ -41,7 +41,16 @@ namespace com.aoyon.AutoConfigureTexture
                 var go = new GameObject(tex2d.name);
                 go.transform.SetParent(root.transform, false);
                 var textureConfigurator = go.AddComponent<TextureConfigurator>();
-                var textureSelector = new TextureSelector(){ SelectTexture = tex2d};
+
+                var textureSelector = new TextureSelector();
+                textureSelector.Mode = TextureSelector.SelectMode.Relative;
+                // 代表のプロパティ, Renderer, Material
+                var property = properties.First();
+                var materialInfo = property.MaterialInfo;
+                textureSelector.RendererAsPath = materialInfo.Renderers.First();
+                textureSelector.SlotAsPath = materialInfo.MaterialIndices.First();
+                var propertyName = new net.rs64.TexTransTool.PropertyName(property.PropertyName);
+                textureSelector.PropertyNameAsPath = propertyName;
                 textureConfigurator.TargetTexture = textureSelector;
 
                 // 解像度の変更を試す

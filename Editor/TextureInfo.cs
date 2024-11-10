@@ -62,14 +62,15 @@ namespace com.aoyon.AutoConfigureTexture
             Properties.Add(propertyInfo);
         }
 
-        // todo 何とかしてUVチャンネルを取得する
-        public static List<TextureInfo> Collect(IEnumerable<Material> materials)
+        internal static List<TextureInfo> Collect(GameObject root)
         {
             var textureInfos = new Dictionary<Texture, TextureInfo>();
 
-            foreach (Material material in materials)
+            var materialInfos = MaterialInfo.Collect(root);
+            foreach (var materialInfo in materialInfos)
             {
-                Shader shader = material.shader;
+                var material = materialInfo.Material;
+                var shader = material.shader;
 
                 int propertyCount = ShaderUtil.GetPropertyCount(shader);
                 for (int i = 0; i < propertyCount; i++)
@@ -90,8 +91,7 @@ namespace com.aoyon.AutoConfigureTexture
                         textureInfos[texture] = textureInfo;
                     }
 
-                    // UVチャンネルは仮
-                    var propertyInfo = new PropertyInfo(material, shader, propertyName, 0);
+                    var propertyInfo = new PropertyInfo(materialInfo, shader, propertyName, 0);
                     textureInfo.AddProperty(propertyInfo);
                 }
             }
@@ -113,16 +113,59 @@ namespace com.aoyon.AutoConfigureTexture
 
     public readonly struct PropertyInfo
     {
-        public readonly Material Material;
+        public readonly MaterialInfo MaterialInfo;
         public readonly Shader Shader; 
         public readonly string PropertyName;
         public readonly int UVchannel;
-        public PropertyInfo(Material material, Shader shader, string propertyName, int uvchannel)
+
+        public PropertyInfo(MaterialInfo materialInfo, Shader shader, string propertyName, int uvchannel)
         {
-            Material = material;
+            MaterialInfo = materialInfo;
             Shader = shader;
             PropertyName = propertyName;
             UVchannel = uvchannel;
+        }
+    }
+
+    public class MaterialInfo
+    {
+        public readonly List<Renderer> Renderers = new();
+        public readonly List<int> MaterialIndices = new();
+        public readonly Material Material;
+        private MaterialInfo(Material material)
+        {
+            Material = material;
+        }
+
+        private void AddReference(Renderer renderer, int index)
+        {
+            Renderers.Add(renderer);
+            MaterialIndices.Add(index);
+        }
+
+        public static IEnumerable<MaterialInfo> Collect(GameObject root)
+        {
+            var materialInfos = new Dictionary<Material, MaterialInfo>();
+
+            foreach (var renderer in root.GetComponentsInChildren<Renderer>(true))
+            {
+                var materials = renderer.sharedMaterials;
+                for (int index = 0; index < materials.Length; index++)
+                {
+                    var material = materials[index];
+                    if (material == null) continue;
+
+                    if (!materialInfos.TryGetValue(material, out var materialInfo))
+                    {
+                        materialInfo = new MaterialInfo(material);
+                        materialInfos[material] = materialInfo;
+                    }
+
+                    materialInfo.AddReference(renderer, index);
+                }
+            }
+
+            return materialInfos.Values;
         }
     }
 }

@@ -29,7 +29,7 @@ namespace com.aoyon.AutoConfigureTexture
         public bool IsUnderHeight(TextureInfo info, float thresholdRatio)
         {
             var height = _worldViewPos.y * thresholdRatio;
-            var material = info.Properties.First().Material;
+            var material = info.Properties.First().MaterialInfo.Material;
 
             foreach (var renderer in _renderers)
             {
