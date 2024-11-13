@@ -28,5 +28,17 @@ namespace com.aoyon.AutoConfigureTexture
             // overrideしないのでコンポーネントは残す
             //DestroyImmediate(component);
         }
+
+        [MenuItem("CONTEXT/AutoConfigureTexture/Attach AtlasTexture")]
+        private static void AttachAtlasTextureContext(MenuCommand command)
+        {
+            var component = command.context as AutoConfigureTexture;
+            var go = AttachAtlasTexture.Apply(component, component.transform);
+            Selection.activeGameObject = go;
+            EditorGUIUtility.PingObject(go);
+            // overrideしないのでコンポーネントは残す
+            //DestroyImmediate(component);
+        }
+
     }
 }

@@ -20,7 +20,7 @@ namespace com.aoyon.AutoConfigureTexture
                 .Where(t => t != null)
                 .ToHashSet();
 
-            var root = new GameObject("Auto Configure Texture");
+            var root = new GameObject("Auto Texture Configurator");
             root.transform.SetParent(paerent);
         
             var infos = TextureInfo.Collect(component.gameObject);

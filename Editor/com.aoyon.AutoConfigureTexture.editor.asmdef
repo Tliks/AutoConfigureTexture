@@ -4,6 +4,7 @@
     "references": [
         "nadena.dev.ndmf",
         "net.rs64.tex-trans-tool.runtime",
+        "net.rs64.tex-trans-core",
         "com.aoyon.AutoConfigureTexture.runtime",
         "lilToon.Editor"
     ],

@@ -19,5 +19,6 @@ namespace com.aoyon.AutoConfigureTexture
         public bool OptimizeTextureFormat = true;
         public bool OptimizeMipMap = true;
         public Reduction ResolutionReduction = Reduction.Normal;
+        public bool ResizeIslands = true;
     }
 }

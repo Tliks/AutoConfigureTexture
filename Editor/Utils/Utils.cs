@@ -102,14 +102,14 @@ namespace com.aoyon.AutoConfigureTexture
             }
         }
 
-        public static Material CopyAndRegisterMaterial(Material original)
+        public static Material CopyAndRegister(Material original)
         {
             var proxy = new Material(original);
             ObjectRegistry.RegisterReplacedObject(original, proxy);
             return proxy;
         }
 
-        public static Texture2D CopyAndRegisterTexture(Texture2D original)
+        public static Texture2D CopyAndRegister(Texture2D original)
         {
             var proxy = CopyTexture2D(original);
             ObjectRegistry.RegisterReplacedObject(original, proxy);
@@ -152,5 +152,21 @@ namespace com.aoyon.AutoConfigureTexture
         {
             if (!condition) throw new InvalidOperationException("assertion failed");
         } 
+
+        public static Texture GetMainTexture(Material material)
+        {
+            return material.GetTexture("_MainTex");
+        }
+
+        public static float CalculateArea(Vector2 p1, Vector2 p2, Vector2 p3)
+        {
+            return Mathf.Abs((p1.x * (p2.y - p3.y) + p2.x * (p3.y - p1.y) + p3.x * (p1.y - p2.y)) / 2);
+        }
+
+        public static float CalculateArea(Vector3 p1, Vector3 p2, Vector3 p3)
+        {
+            var cross = Vector3.Cross(p2 - p1, p3 - p1);
+            return cross.magnitude / 2;
+        }
     }
 }
