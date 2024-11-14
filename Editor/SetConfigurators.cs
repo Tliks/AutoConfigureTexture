@@ -55,8 +55,10 @@ namespace com.aoyon.AutoConfigureTexture
                 textureSelector.PropertyNameAsPath = propertyName;
                 textureConfigurator.TargetTexture = textureSelector;
 
+                AssignPrimaryUsage(info);
+
                 // 解像度の変更を試す
-                if (AdjustTextureResolution(tex2d, properties, component.ResolutionReduction, materialArea, out var resolution))
+                if (AdjustTextureResolution(info, component.ResolutionReduction, materialArea, out var resolution))
                 {
                     textureConfigurator.OverrideTextureSetting = true;
                 }
@@ -70,7 +72,7 @@ namespace com.aoyon.AutoConfigureTexture
                 textureConfigurator.MipMap = !removeMipMap;
 
                 // 圧縮形式の変更を試す
-                if (AdjustTextureFormat(info, tex2d, out var format) && component.OptimizeTextureFormat)
+                if (AdjustTextureFormat(info, component, out var format))
                 {
                     textureConfigurator.OverrideCompression = true;
                 }
@@ -83,9 +85,60 @@ namespace com.aoyon.AutoConfigureTexture
 
             return root;
         }
-            
-        internal static bool AdjustTextureResolution(Texture2D texture, List<PropertyInfo> propertyInfos, Reduction reduction, MaterialArea materialArea, out int resolution)
+
+        public static void AssignPrimaryUsage(TextureInfo info)
         {
+            // 不明な使用用途は無視し既知の情報のみで判断
+            // パターン1: lilToonのみで不明プロパティが含まれていた場合
+            //            重要なプロパティは抑えてると思われるため不明プロパティは無視
+            // パターン2: lilToon以外のみの場合
+            //           _MainTexのみusageとして返るが、それ以外で不明プロパティのみの場合は何もしない
+            // パターン3: lilToonとそれ以外が混じっている場合
+            //           lilToonの情報のみで処理されるためlilToon以外で重要な使用プロパティだった場合顕劣化が想定されるが、エッジケースなのでここでは想定しない
+            var usages = info.Properties
+                .Select(info => PropertyDictionary.GetTextureUsage(info.Shader, info.PropertyName))
+                .OfType<TextureUsage>();
+                
+            // 不明プロパティのみの場合は何もしない
+            if (!usages.Any())
+            {
+                info.PrimaryUsage = TextureUsage.Unknown;
+            }
+            else
+            {
+                info.PrimaryUsage = GetPrimaryUsage(usages);;
+            }   
+
+            return;
+
+            // primaryでない使用用途を全て無視しているのでもう少し良い取り扱い方はしたい
+            // MainTex > NormalMap > Emission > AOMap > NormalMapSub > Others > MatCap
+            TextureUsage GetPrimaryUsage(IEnumerable<TextureUsage> usages)
+            {
+                foreach (var usage in new[] { 
+                    TextureUsage.MainTex, 
+                    TextureUsage.NormalMap, 
+                    TextureUsage.Emission, 
+                    TextureUsage.AOMap, 
+                    TextureUsage.NormalMapSub, 
+                    TextureUsage.Others, 
+                    TextureUsage.MatCap 
+                })
+                {
+                    if (usages.Contains(usage))
+                    {
+                        return usage;
+                    }
+                }
+                throw new InvalidOperationException();
+            }
+        }
+
+        internal static bool AdjustTextureResolution(TextureInfo info, Reduction reduction, MaterialArea materialArea, out int resolution)
+        {
+            var texture = info.Texture as Texture2D;
+            var propertyInfos = info.Properties;
+
             int width = texture.width;
             int height = texture.height;
             resolution = width;
@@ -99,21 +152,9 @@ namespace com.aoyon.AutoConfigureTexture
                 return false;
             }
 
-            // 不明な使用用途は無視し既知の情報のみで判断
-            // パターン1: lilToonのみで不明プロパティが含まれていた場合
-            //            重要なプロパティは抑えてると思われるため不明プロパティは無視
-            // パターン2: lilToon以外のみの場合
-            //           _MainTexのみusageとして返るが、それ以外で不明プロパティのみの場合は何もしない
-            // パターン3: lilToonとそれ以外が混じっている場合
-            //           lilToonの情報のみで処理されるためlilToon以外で重要な使用プロパティだった場合顕劣化が想定されるが、エッジケースなのでここでは想定しない
-            var usages = propertyInfos
-                .Select(info => PropertyDictionary.GetTextureUsage(info.Shader, info.PropertyName))
-                .OfType<TextureUsage>();
-            // 不明プロパティのみの場合は何もしない
-            if (!usages.Any())
+            var usage = info.PrimaryUsage;
+            if (usage == TextureUsage.Unknown)
                 return false;
-
-            var usage = GetPrimaryUsage(usages);
 
             if (reduction == Reduction.Low)
             {
@@ -218,41 +259,18 @@ namespace com.aoyon.AutoConfigureTexture
 
             return resolution != width;
             
-            // primaryでない使用用途を全て無視しているのでもう少し良い取り扱い方はしたい
-            // MainTex > NormalMap > Emission > AOMap > NormalMapSub > Others > MatCap
-            TextureUsage GetPrimaryUsage(IEnumerable<TextureUsage> usages)
-            {
-                if (usages.Contains(TextureUsage.MainTex)){
-                    return TextureUsage.MainTex;
-                }
-                else if (usages.Contains(TextureUsage.NormalMap)){
-                    return TextureUsage.NormalMap;
-                }
-                else if (usages.Contains(TextureUsage.Emission)){
-                    return TextureUsage.Emission;
-                }
-                else if (usages.Contains(TextureUsage.AOMap)){
-                    return TextureUsage.AOMap;
-                }
-                else if (usages.Contains(TextureUsage.NormalMapSub)){
-                    return TextureUsage.NormalMapSub;
-                }
-                else if (usages.Contains(TextureUsage.Others)){
-                    return TextureUsage.Others;
-                }
-                else if (usages.Contains(TextureUsage.MatCap)){
-                    return TextureUsage.MatCap;
-                }
-                else{
-                    throw new InvalidOperationException();
-                }
-            }
         }
 
         // Todo: MSDFなど圧縮してはいけないテクスチャを除外できていない
-        internal static bool AdjustTextureFormat(TextureInfo info, Texture2D tex, out TextureFormat format)
+        internal static bool AdjustTextureFormat(TextureInfo info, AutoConfigureTexture component, out TextureFormat format)
         {
+            var tex = info.Texture as Texture2D;
+
             var current = info.Format;
+            format = current;
+
+            if (!component.OptimizeTextureFormat) return false;
+
 
             var channels = info.Properties
                 .Select(propertyInfo => PropertyDictionary.GetChannels(propertyInfo.Shader, propertyInfo.PropertyName));

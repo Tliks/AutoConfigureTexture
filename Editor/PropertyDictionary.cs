@@ -13,7 +13,8 @@ namespace com.aoyon.AutoConfigureTexture
         AOMap,
         MatCap,
         Emission,
-        Others
+        Others,
+        Unknown
     }
 
     public class PropertyDictionary

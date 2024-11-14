@@ -6,7 +6,7 @@ using System.Linq;
 
 namespace com.aoyon.AutoConfigureTexture
 {
-    public readonly struct TextureInfo
+    public class TextureInfo
     {
         public readonly Texture Texture;
         public readonly List<PropertyInfo> Properties;
@@ -20,6 +20,8 @@ namespace com.aoyon.AutoConfigureTexture
         public readonly bool AlphaIsTransparency;
         public readonly bool MipmapEnabled;
         public readonly bool isReadable;
+
+        public TextureUsage PrimaryUsage;
 
         public TextureInfo(Texture texture)
         {
