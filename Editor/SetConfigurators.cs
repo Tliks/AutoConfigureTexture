@@ -276,6 +276,10 @@ namespace com.aoyon.AutoConfigureTexture
 
             if (!component.OptimizeTextureFormat) return false;
 
+            if (current == TextureFormat.DXT5Crunched || current == TextureFormat.DXT1Crunched){
+                return false;
+            }
+
             var mode = component.FormatMode;
             var currentBPP = MathHelper.FormatToBPP(current);
 
@@ -285,7 +289,7 @@ namespace com.aoyon.AutoConfigureTexture
             int maxChannel = channels.All(c => c != -1)
                 ? channels.Max()
                 : 4; // 不明な使用用途が一つでもあった場合は4チャンネルとして処理
-            
+        
             switch(maxChannel)
             {
                 case 4:
