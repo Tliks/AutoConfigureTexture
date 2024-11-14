@@ -276,6 +276,8 @@ namespace com.aoyon.AutoConfigureTexture
 
             if (!component.OptimizeTextureFormat) return false;
 
+            var mode = component.FormatMode;
+            var currentBPP = MathHelper.FormatToBPP(current);
 
             var channels = info.Properties
                 .Select(propertyInfo => PropertyDictionary.GetChannels(propertyInfo.Shader, propertyInfo.PropertyName));
@@ -288,13 +290,23 @@ namespace com.aoyon.AutoConfigureTexture
             {
                 case 4:
                     // ノーマルマップ(4チャンネル)にBC5が入っている場合への対症療法
-                    if (current == TextureFormat.BC5)
+                    if (current == TextureFormat.BC7 || current == TextureFormat.BC5)
                     {
                         format = current;
                     }
                     else if (Utils.HasAlpha(tex))
                     {
-                        format = TextureFormat.BC7;
+                        if (mode == FormatMode.HighQuality){
+                            format = TextureFormat.BC7;
+                        }
+                        else if (mode == FormatMode.Balanced){
+                            format = info.PrimaryUsage == TextureUsage.MainTex 
+                                ? TextureFormat.BC7
+                                : TextureFormat.DXT5;
+                        }
+                        else if (mode == FormatMode.LowDownloadSize){
+                            format = TextureFormat.DXT5;
+                        }
                     }
                     else
                     {
@@ -308,7 +320,23 @@ namespace com.aoyon.AutoConfigureTexture
                     }
                     else
                     {
-                        format = TextureFormat.DXT1;
+                        if (mode == FormatMode.HighQuality){
+                            format = currentBPP >= 8d 
+                                ? TextureFormat.BC7
+                                : TextureFormat.DXT1;
+                            //Debug.LogWarning($"Conversion: {tex.name} {current} format with {currentBPP}bpp to {format} format with {MathHelper.FormatToBPP(format)}bpp");
+                        }
+                        else if (mode == FormatMode.Balanced){
+                            /*
+                            format = currentBPP >= 8  && info.PrimaryUsage == TextureUsage.MainTex
+                                ? TextureFormat.BC7 
+                                : TextureFormat.DXT1;
+                            */
+                            format = TextureFormat.DXT1;
+                        }
+                        else if (mode == FormatMode.LowDownloadSize){
+                            format = TextureFormat.DXT1;
+                        }
                     }
                     break;
                 case 2:
@@ -318,7 +346,14 @@ namespace com.aoyon.AutoConfigureTexture
                     }
                     else
                     {
-                        format = TextureFormat.DXT1;
+                        if (mode == FormatMode.HighQuality){
+                            format = currentBPP >= 8d 
+                                ? TextureFormat.BC7
+                                : TextureFormat.DXT1;
+                        }
+                        else{
+                            format = TextureFormat.DXT1;
+                        }
                     }
                     break;
                 case 1:
@@ -328,7 +363,6 @@ namespace com.aoyon.AutoConfigureTexture
                     throw new InvalidOperationException();
             }
 
-            var currentBPP = MathHelper.FormatToBPP(current);
             var BPP = MathHelper.FormatToBPP(format);
             if (BPP > currentBPP)
             {

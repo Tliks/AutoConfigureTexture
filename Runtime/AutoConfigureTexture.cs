@@ -12,11 +12,19 @@ namespace com.aoyon.AutoConfigureTexture
         Ultra
     }
 
+    public enum FormatMode
+    {
+        LowDownloadSize,
+        Balanced,
+        HighQuality
+    }
+
     [AddComponentMenu("Auto Configure Texture/Auto Configure Texture")]
     [DisallowMultipleComponent]
     public class AutoConfigureTexture: MonoBehaviour, IEditorOnly
     {
         public bool OptimizeTextureFormat = true;
+        public FormatMode FormatMode = FormatMode.Balanced;
         public bool OptimizeMipMap = true;
         public Reduction ResolutionReduction = Reduction.Normal;
     }
