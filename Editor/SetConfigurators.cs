@@ -167,10 +167,10 @@ namespace com.aoyon.AutoConfigureTexture
                         break;
                     case TextureUsage.NormalMapSub:
                     case TextureUsage.Others:
-                        if (resolution > 512) resolution /= 2;
+                        TryReduceResolution(ref resolution, 2, 512);
                         break;
                     case TextureUsage.MatCap:
-                        if (resolution > 256) resolution /= 2;
+                        TryReduceResolution(ref resolution, 2, 256);
                         break;
                 }
             }
@@ -180,29 +180,18 @@ namespace com.aoyon.AutoConfigureTexture
                 {   
                     case TextureUsage.MainTex:
                     case TextureUsage.NormalMap:
-                        if (resolution > 512)
-                        {
-                            var materials = propertyInfos.Select(info => info.MaterialInfo.Material);
-                            bool isUnderHips = materialArea.IsUnderHeight(materials, 0.5f);
-                            if (isUnderHips)
-                            {
-                                resolution /= 2;
-                            }
-                        }
+                        TryReduceResolutionIfUnderHeight(ref resolution, 2, 512);
                         break;
                     case TextureUsage.Emission:
-                        if (resolution > 512) resolution /= 2;
+                        TryReduceResolution(ref resolution, 2, 512);
                         break;
                     case TextureUsage.AOMap:
                     case TextureUsage.NormalMapSub:
                     case TextureUsage.Others:
-                        if (resolution > 512)
-                        {
-                            resolution = Mathf.Max(resolution / 4, 512);
-                        }
+                        TryReduceResolution(ref resolution, 4, 512);
                         break;
                     case TextureUsage.MatCap:
-                        if (resolution > 256) resolution /= 2;
+                        TryReduceResolution(ref resolution, 4, 256);
                         break;
                 }
             }
@@ -212,19 +201,16 @@ namespace com.aoyon.AutoConfigureTexture
                 {   
                     case TextureUsage.MainTex:
                     case TextureUsage.NormalMap:
-                        if (resolution > 512) resolution /= 2;
+                        TryReduceResolution(ref resolution, 2, 512);
                         break;
                     case TextureUsage.Emission:
                     case TextureUsage.AOMap:
                     case TextureUsage.NormalMapSub:
                     case TextureUsage.Others:
-                        if (resolution > 512)
-                        {
-                            resolution = Mathf.Max(resolution / 4, 512);
-                        }
+                        TryReduceResolution(ref resolution, 4, 512);
                         break;
                     case TextureUsage.MatCap:
-                        if (resolution > 256) resolution /= 2;
+                        TryReduceResolution(ref resolution, 2, 256);
                         break;
                 }
             }
@@ -234,31 +220,50 @@ namespace com.aoyon.AutoConfigureTexture
                 {   
                     case TextureUsage.MainTex:
                     case TextureUsage.NormalMap:
-                        if (resolution > 512)
-                        {
-                            resolution = Mathf.Max(resolution / 4, 512);
-                        }
+                        TryReduceResolution(ref resolution, 4, 512);
                         break;
                     case TextureUsage.Emission:
                     case TextureUsage.AOMap:
                     case TextureUsage.NormalMapSub:
                     case TextureUsage.Others:
-                        if (resolution > 256)
-                        {
-                            resolution = Mathf.Max(resolution / 4, 256);
-                        }
+                        TryReduceResolution(ref resolution, 4, 256);
                         break;
                     case TextureUsage.MatCap:
-                        if (resolution > 128)
-                        {
-                            resolution = Mathf.Max(resolution / 4, 128);
-                        }
+                        TryReduceResolution(ref resolution, 4, 128);
                         break;
                 }
             }
 
             return resolution != width;
-            
+
+            // 解像度が指定された最小値を下回らないようにしつつ、指定された除数で解像度を減少させます。
+            // 現在の値が既に最小値を下回っている場合は現在の値を用います。
+            static void TryReduceResolution(ref int currentValue, int divisor, int minimum)
+            {
+                if (!Mathf.IsPowerOfTwo(divisor)) 
+                    throw new InvalidOperationException("divisor must be a power of two");
+
+                if (currentValue <= minimum)
+                    return;
+
+                currentValue = Mathf.Max(currentValue / divisor, minimum);
+            }
+
+            // テクスチャが使用されているマテリアルがアバターの下部でのみ使用されている条件を追加。
+            // 靴などの目につきにくい箇所の解像度を下げることを意図しています。
+            void TryReduceResolutionIfUnderHeight(ref int currentValue, int divisor, int minimum, float thresholdRatio = 0.5f)
+            {
+                if (!Mathf.IsPowerOfTwo(divisor)) 
+                    throw new InvalidOperationException("divisor must be a power of two");
+
+                if (currentValue <= minimum)
+                    return;
+
+                var materials = propertyInfos.Select(info => info.MaterialInfo.Material);
+                if (materialArea.IsUnderHeight(materials, 0.5f))
+                    currentValue = Mathf.Max(currentValue / divisor, minimum);
+            }
+      
         }
 
         // Todo: MSDFなど圧縮してはいけないテクスチャを除外できていない
