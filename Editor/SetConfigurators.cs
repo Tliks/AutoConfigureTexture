@@ -210,7 +210,7 @@ namespace com.aoyon.AutoConfigureTexture
                         TryReduceResolution(ref resolution, 4, 512);
                         break;
                     case TextureUsage.MatCap:
-                        TryReduceResolution(ref resolution, 2, 256);
+                        TryReduceResolution(ref resolution, 4, 256);
                         break;
                 }
             }
