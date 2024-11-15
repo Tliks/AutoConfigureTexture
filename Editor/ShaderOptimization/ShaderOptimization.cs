@@ -8,7 +8,7 @@ using nadena.dev.ndmf;
 
 namespace com.aoyon.AutoConfigureTexture
 {    
-    public class ShaderOptimization
+    internal partial class ShaderOptimization
     {
 
         [InitializeOnLoadMethod]
@@ -18,23 +18,20 @@ namespace com.aoyon.AutoConfigureTexture
 
         public static void Apply(BuildContext ctx, AutoConfigureTexture component)
         {
-            if (component == null || (component.RunShaderOptimization == false))
+            if (component == null || (!component.RunShaderOptimization))
                 return;
 
             var mapping = Utils.CopyAndRegisterMaterials(Utils.CollectMaterials(component.gameObject));
 
-            var lilmats = mapping.Values.Where(m => SerachShader.IsLilToonShader(m.shader));
-            InvokelilToon(ctx, lilmats);
+            var materials = mapping.Values;
+            OptimizeMaterials(materials);
+#if ACT_lILTOON_1_8_0
+            OptimizelilToon(ctx, materials);
+#endif
 
             var renderers = component.GetComponentsInChildren<Renderer>(true);
             Utils.ReplaceMaterials(mapping, renderers);
         }
 
-        private static void InvokelilToon(BuildContext ctx, IEnumerable<Material> materials)
-        {
-#if ACT_lILTOON_1_8_0
-            Optimizer.OptimizeMaterials(ctx, materials.ToArray());
-#endif
-        }
     }
 }
