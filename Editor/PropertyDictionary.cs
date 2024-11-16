@@ -171,7 +171,7 @@ namespace com.aoyon.AutoConfigureTexture
         {
             Dictionary<string, PropertyData> shaderDictionary = null;
 
-            if (SerachShader.IsLilToonShader(shader))
+            if (CheckShader.IslilToon(shader))
                 shaderDictionary = lilToonProperty;
 
             if (shaderDictionary != null && shaderDictionary.TryGetValue(property, out var channelValues))
