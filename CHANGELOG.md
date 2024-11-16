@@ -13,6 +13,33 @@
 
 ### Security
 
+## [0.2.0] - 2024-11-16
+### Added
+- Format Mode of Optimize Texture Format
+    - Conversion from DXT5 to BC7 improved the gradation expression while maintaining texture memory, but the download size increased slightly.
+    - This is an addition of option to address this issue
+    - No increase in texture memory or worsening in gradation expression from the default in any mode.
+    - `LowDownloadSize:` No conversion that may increase the download size
+    - `Balanced`: Only main textures that use 4 channels will be converted to DX7.
+    - `HighQuality`: Convert to the highest quality format possible without increasing texture memory
+- Optimize Material
+    - Currently, the only feature is to delete unused properties and textures in lilToon.
+    - Same as LI MaterialOptimizer, but is included due to the order of execution.
+- Localization
+- Option to maintain Crunch Compression
+
+### Changed
+- vpmDependencies of TexTransTool to v0.8.6 or v0.9.0-beta.0
+- default effects due to the addition of Format Mode
+    - gradation improvement is reduced, but download size is reduced
+- improve shader check for lilToon
+
+### Fixed
+- incorrect value of resolution reduction of matcap
+- increasing texture memory due to potential issue of TextureConfigurator by Optimize Material
+- unnecessary logs when used in conjunction with LI MaterialOptimizer by Optimize Material
+- Crunch Compression is not maintained
+
 ## [0.1.2] - 2024-11-10
 ### Changed
 - vpmDependencies of TexTransTool to be limited to v0.8.4 or v0.9.0-beta.0
