@@ -34,7 +34,7 @@ using VRC.SDK3.Avatars.Components;
 
 namespace com.aoyon.AutoConfigureTexture
 {
-    internal partial class ShaderOptimization
+    internal partial class OptimizeMaterial
     {
         internal static void OptimizelilToon(BuildContext ctx, IEnumerable<Material> materials)
         {

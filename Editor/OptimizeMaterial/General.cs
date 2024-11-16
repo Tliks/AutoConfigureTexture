@@ -30,7 +30,7 @@ using UnityEngine.Rendering;
 
 namespace com.aoyon.AutoConfigureTexture
 {
-    internal partial class ShaderOptimization
+    internal partial class OptimizeMaterial
     {
         internal static void OptimizeMaterials(IEnumerable<Material> materials)
         {

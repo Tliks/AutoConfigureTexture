@@ -24,7 +24,7 @@ namespace com.aoyon.AutoConfigureTexture
 
                 foreach (var component in components)
                 {
-                    ShaderOptimization.Apply(ctx, component);
+                    OptimizeMaterial.Apply(ctx, component);
                 }
             });
 

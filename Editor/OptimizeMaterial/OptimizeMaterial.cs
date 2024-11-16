@@ -8,7 +8,7 @@ using nadena.dev.ndmf;
 
 namespace com.aoyon.AutoConfigureTexture
 {    
-    internal partial class ShaderOptimization
+    internal partial class OptimizeMaterial
     {
 
         [InitializeOnLoadMethod]
@@ -18,7 +18,7 @@ namespace com.aoyon.AutoConfigureTexture
 
         public static void Apply(BuildContext ctx, AutoConfigureTexture component)
         {
-            if (component == null || (!component.RunShaderOptimization))
+            if (component == null || (!component.OptimizeMaterial))
                 return;
 
             var mapping = Utils.CopyAndRegisterMaterials(Utils.CollectMaterials(component.gameObject));

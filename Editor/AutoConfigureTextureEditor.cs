@@ -9,7 +9,7 @@ namespace com.aoyon.AutoConfigureTexture
         private SerializedProperty OptimizeTextureFormat;
         private SerializedProperty FormatMode;
         private SerializedProperty OptimizeMipMap;
-        private SerializedProperty RunShaderOptimization;
+        private SerializedProperty OptimizeMaterial;
         private SerializedProperty ResolutionReduction;
 
         private void OnEnable()
@@ -17,7 +17,7 @@ namespace com.aoyon.AutoConfigureTexture
             OptimizeTextureFormat = serializedObject.FindProperty(nameof(AutoConfigureTexture.OptimizeTextureFormat));
             FormatMode = serializedObject.FindProperty(nameof(AutoConfigureTexture.FormatMode));
             OptimizeMipMap = serializedObject.FindProperty(nameof(AutoConfigureTexture.OptimizeMipMap));
-            RunShaderOptimization = serializedObject.FindProperty(nameof(AutoConfigureTexture.RunShaderOptimization));
+            OptimizeMaterial = serializedObject.FindProperty(nameof(AutoConfigureTexture.OptimizeMaterial));
             ResolutionReduction = serializedObject.FindProperty(nameof(AutoConfigureTexture.ResolutionReduction));
         }
 
@@ -33,7 +33,7 @@ namespace com.aoyon.AutoConfigureTexture
                 }
             }
             EditorGUILayout.PropertyField(OptimizeMipMap);
-            EditorGUILayout.PropertyField(RunShaderOptimization);
+            EditorGUILayout.PropertyField(OptimizeMaterial);
             EditorGUILayout.PropertyField(ResolutionReduction);
             serializedObject.ApplyModifiedProperties();
         }
