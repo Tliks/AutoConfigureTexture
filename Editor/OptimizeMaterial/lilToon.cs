@@ -31,6 +31,9 @@ using UnityEngine;
 using UnityEngine.Rendering;
 using nadena.dev.ndmf;
 using VRC.SDK3.Avatars.Components;
+#if ACT_MA
+using nadena.dev.modular_avatar.core;
+#endif
 
 namespace com.aoyon.AutoConfigureTexture
 {
@@ -41,6 +44,7 @@ namespace com.aoyon.AutoConfigureTexture
             var controllers = new HashSet<RuntimeAnimatorController>();
             controllers.UnionWith(ctx.AvatarRootObject.GetComponentsInChildren<Animator>(true).Where(a => a.runtimeAnimatorController).Select(a => a.runtimeAnimatorController));
             VRChatHelper.GetAnimatorControllers(ctx.AvatarDescriptor, controllers);
+            MAHelper.GetAnimatorControllers(ctx.AvatarRootObject, controllers);
             var props = controllers.SelectMany(c => c.animationClips).SelectMany(c => AnimationUtility.GetCurveBindings(c)).Select(b => b.propertyName).Where(n => n.Contains("material."))
             .Select(n => n=n.Substring("material.".Length))
             .Select(n => {if(n.Contains(".")) n=n.Substring(0, n.IndexOf(".")); return n;}).Distinct().ToArray();
@@ -58,6 +62,17 @@ namespace com.aoyon.AutoConfigureTexture
         {
             controllers.UnionWith(descriptor.specialAnimationLayers.Where(l => l.animatorController).Select(l => l.animatorController));
             if(descriptor.customizeAnimationLayers) controllers.UnionWith(descriptor.baseAnimationLayers.Where(l => l.animatorController).Select(l => l.animatorController));
+        }
+    }
+
+    internal static class MAHelper
+    {
+        internal static void GetAnimatorControllers(GameObject root, HashSet<RuntimeAnimatorController> controllers)
+        {
+#if ACT_MA
+            var mergeAnimators = root.GetComponentsInChildren<ModularAvatarMergeAnimator>(true);
+            controllers.UnionWith(mergeAnimators.Select(ma => ma.animator));
+#endif            
         }
     }    
 }
