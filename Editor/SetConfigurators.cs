@@ -276,7 +276,8 @@ namespace com.aoyon.AutoConfigureTexture
 
             if (!component.OptimizeTextureFormat) return false;
 
-            if (current == TextureFormat.DXT5Crunched || current == TextureFormat.DXT1Crunched){
+            if (component.MaintainCrunch &&
+                (current == TextureFormat.DXT5Crunched || current == TextureFormat.DXT1Crunched)){
                 return false;
             }
 
