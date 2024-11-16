@@ -25,20 +25,26 @@ namespace com.aoyon.AutoConfigureTexture
 
         public override void OnInspectorGUI()
         {
+            L10n.SelectLanguageGUI();
             serializedObject.Update();
-            EditorGUILayout.PropertyField(OptimizeTextureFormat);
+            PropertyField(OptimizeTextureFormat);
             if (OptimizeTextureFormat.boolValue)
             {
                 using (new EditorGUI.IndentLevelScope())
                 {
-                    EditorGUILayout.PropertyField(FormatMode);
-                    EditorGUILayout.PropertyField(MaintainCrunch);
+                    PropertyField(FormatMode);
+                    PropertyField(MaintainCrunch);
                 }
             }
-            EditorGUILayout.PropertyField(OptimizeMipMap);
-            EditorGUILayout.PropertyField(OptimizeMaterial);
-            EditorGUILayout.PropertyField(ResolutionReduction);
+            PropertyField(OptimizeMipMap);
+            PropertyField(OptimizeMaterial);
+            PropertyField(ResolutionReduction);
             serializedObject.ApplyModifiedProperties();
+        }
+
+        private void PropertyField(SerializedProperty property)
+        {
+            EditorGUILayout.PropertyField(property, L10n.G(property));
         }
 
         [MenuItem("CONTEXT/AutoConfigureTexture/Attach TextureConfigurator")]
