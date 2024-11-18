@@ -5,7 +5,8 @@
         "nadena.dev.ndmf",
         "net.rs64.tex-trans-tool.runtime",
         "com.aoyon.AutoConfigureTexture.runtime",
-        "lilToon.Editor"
+        "lilToon.Editor",
+        "nadena.dev.modular-avatar.core"
     ],
     "includePlatforms": [
         "Editor"
@@ -19,8 +20,13 @@
     "versionDefines": [
         {
             "name": "jp.lilxyzw.liltoon",
+            "expression": "1.8.0",
+            "define": "ACT_lILTOON_1_8_0"
+        },
+        {
+            "name": "nadena.dev.modular-avatar",
             "expression": "",
-            "define": "HAS_lILTOON"
+            "define": "ACT_MA"
         },
         {
         "name": "com.vrchat.base",

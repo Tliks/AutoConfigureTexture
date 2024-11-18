@@ -1,0 +1,26 @@
+msgid ""
+msgstr ""
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: en-US\n"
+
+
+
+msgid "OptimizeTextureFormat"
+msgstr "Optimize Texture Format"
+
+msgid "FormatMode"
+msgstr "Format Mode"
+
+msgid "MaintainCrunch"
+msgstr "Maintain Crunch"
+
+msgid "OptimizeMipMap"
+msgstr "Optimize MipMap"
+
+msgid "OptimizeMaterial"
+msgstr "Optimize Material"
+
+msgid "ResolutionReduction"
+msgstr "Resolution Reduction"

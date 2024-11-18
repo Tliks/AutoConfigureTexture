@@ -6,16 +6,45 @@ namespace com.aoyon.AutoConfigureTexture
     [CustomEditor(typeof(AutoConfigureTexture))]
     public class AutoConfigureTextureEditor : Editor
     {
+        private SerializedProperty OptimizeTextureFormat;
+        private SerializedProperty FormatMode;
+        private SerializedProperty MaintainCrunch;
+        private SerializedProperty OptimizeMipMap;
+        private SerializedProperty OptimizeMaterial;
+        private SerializedProperty ResolutionReduction;
+
+        private void OnEnable()
+        {
+            OptimizeTextureFormat = serializedObject.FindProperty(nameof(AutoConfigureTexture.OptimizeTextureFormat));
+            FormatMode = serializedObject.FindProperty(nameof(AutoConfigureTexture.FormatMode));
+            MaintainCrunch = serializedObject.FindProperty(nameof(AutoConfigureTexture.MaintainCrunch));
+            OptimizeMipMap = serializedObject.FindProperty(nameof(AutoConfigureTexture.OptimizeMipMap));
+            OptimizeMaterial = serializedObject.FindProperty(nameof(AutoConfigureTexture.OptimizeMaterial));
+            ResolutionReduction = serializedObject.FindProperty(nameof(AutoConfigureTexture.ResolutionReduction));
+        }
+
         public override void OnInspectorGUI()
         {
-            serializedObject.UpdateIfRequiredOrScript();
-            SerializedProperty iterator = serializedObject.GetIterator();
-            iterator.NextVisible(true);
-            while(iterator.NextVisible(false))
+            L10n.SelectLanguageGUI();
+            serializedObject.Update();
+            PropertyField(OptimizeTextureFormat);
+            if (OptimizeTextureFormat.boolValue)
             {
-                EditorGUILayout.PropertyField(iterator);
+                using (new EditorGUI.IndentLevelScope())
+                {
+                    PropertyField(FormatMode);
+                    PropertyField(MaintainCrunch);
+                }
             }
+            PropertyField(OptimizeMipMap);
+            PropertyField(OptimizeMaterial);
+            PropertyField(ResolutionReduction);
             serializedObject.ApplyModifiedProperties();
+        }
+
+        private void PropertyField(SerializedProperty property)
+        {
+            EditorGUILayout.PropertyField(property, L10n.G(property));
         }
 
         [MenuItem("CONTEXT/AutoConfigureTexture/Attach TextureConfigurator")]

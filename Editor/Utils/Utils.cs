@@ -111,6 +111,17 @@ namespace com.aoyon.AutoConfigureTexture
             return proxy;
         }
 
+        public static Dictionary<Material, Material> CopyAndRegisterMaterials(IEnumerable<Material> originals)
+        {
+            var mapping = new Dictionary<Material, Material>();
+            foreach (var original in originals)
+            {
+                var proxy = CopyAndRegisterMaterial(original);
+                mapping[original] = proxy;
+            }
+            return mapping;
+        }
+
         public static bool IsOpaqueMaterial(Material material)
         {
             string materialTag = "RenderType";
