@@ -13,6 +13,13 @@
 
 ### Security
 
+## [0.2.1] - 2024-11-29
+### Changed
+- Improve build-time performance
+- VpmDependencies of TexTransTool to v0.8.7
+    - remove support for v0.9.0-beta.0
+- Do not adjust texture format for Android or iOS
+
 ## [0.2.0] - 2024-11-16
 ### Added
 - Format Mode of Optimize Texture Format
