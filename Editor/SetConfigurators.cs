@@ -272,6 +272,11 @@ namespace com.aoyon.AutoConfigureTexture
             var current = info.Format;
             format = current;
 
+            BuildTarget currentBuildTarget = EditorUserBuildSettings.activeBuildTarget;
+            if (currentBuildTarget == BuildTarget.Android || currentBuildTarget == BuildTarget.iOS) {
+                return false;
+            }
+            
             if (!component.OptimizeTextureFormat) return false;
 
             if (component.MaintainCrunch &&
