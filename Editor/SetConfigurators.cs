@@ -81,8 +81,6 @@ namespace com.aoyon.AutoConfigureTexture
                 compressionSetting.OverrideTextureFormat = format;
             }
 
-            Undo.RegisterCreatedObjectUndo(root, "Auto Configure Texture Setup");
-
             return root;
         }
 

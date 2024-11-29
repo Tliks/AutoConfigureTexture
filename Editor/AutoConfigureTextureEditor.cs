@@ -52,6 +52,7 @@ namespace com.aoyon.AutoConfigureTexture
         {
             var component = command.context as AutoConfigureTexture;
             var go = AttachConfigurators.Apply(component, component.transform);
+            Undo.RegisterCreatedObjectUndo(go, "Auto Configure Texture Setup");
             Selection.activeGameObject = go;
             EditorGUIUtility.PingObject(go);
             // overrideしないのでコンポーネントは残す
