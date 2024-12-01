@@ -13,6 +13,6 @@
   "documentationUrl": "https://tliks.github.io/aoyon-docs/",
   "vpmDependencies": {
     "nadena.dev.ndmf": ">=1.5.0",
-    "net.rs64.tex-trans-tool": "0.8.7"
+    "net.rs64.tex-trans-tool": ">=0.8.7 < 0.9.0-beta.0"
   }
 }
