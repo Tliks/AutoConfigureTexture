@@ -9,8 +9,7 @@
     "url": "https://github.com/Tliks"
   },
   "url": "https://github.com/Tliks/AutoConfigureTexture",
-  "changelogUrl": "https://github.com/Tliks/AutoConfigureTexture/blob/dev/CHANGELOG.md",
-  "documentationUrl": "https://tliks.github.io/aoyon-docs/",
+  "changelogUrl": "https://github.com/Tliks/AutoConfigureTexture/blob/master/CHANGELOG.md",
   "vpmDependencies": {
     "nadena.dev.ndmf": ">=1.5.0",
     "net.rs64.tex-trans-tool": ">=0.8.7 < 0.9.0-beta.0"
