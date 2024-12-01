@@ -13,6 +13,13 @@ namespace com.aoyon.AutoConfigureTexture
         {
             if (component == null || (!component.OptimizeTextureFormat && !component.OptimizeMipMap && component.ResolutionReduction == Reduction.None))
                 return null;
+            
+            if (component.IsPCOnly) {
+                BuildTarget currentBuildTarget = EditorUserBuildSettings.activeBuildTarget;
+                if (currentBuildTarget == BuildTarget.Android || currentBuildTarget == BuildTarget.iOS) {
+                    return null;
+                }
+            }
 
             // 既にTextureConfiguratorを設定しているテクスチャを取得
             var exists = component.GetComponentsInChildren<TextureConfigurator>()

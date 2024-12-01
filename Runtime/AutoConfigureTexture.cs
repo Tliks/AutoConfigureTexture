@@ -29,5 +29,6 @@ namespace com.aoyon.AutoConfigureTexture
         public bool OptimizeMipMap = true;
         public bool OptimizeMaterial = true;
         public Reduction ResolutionReduction = Reduction.Normal;
+        public bool IsPCOnly = true;
     }
 }

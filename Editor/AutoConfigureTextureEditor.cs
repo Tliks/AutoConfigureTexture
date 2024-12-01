@@ -12,6 +12,7 @@ namespace com.aoyon.AutoConfigureTexture
         private SerializedProperty OptimizeMipMap;
         private SerializedProperty OptimizeMaterial;
         private SerializedProperty ResolutionReduction;
+        private SerializedProperty IsPCOnly;
 
         private void OnEnable()
         {
@@ -21,6 +22,7 @@ namespace com.aoyon.AutoConfigureTexture
             OptimizeMipMap = serializedObject.FindProperty(nameof(AutoConfigureTexture.OptimizeMipMap));
             OptimizeMaterial = serializedObject.FindProperty(nameof(AutoConfigureTexture.OptimizeMaterial));
             ResolutionReduction = serializedObject.FindProperty(nameof(AutoConfigureTexture.ResolutionReduction));
+            IsPCOnly = serializedObject.FindProperty(nameof(AutoConfigureTexture.IsPCOnly));
         }
 
         public override void OnInspectorGUI()
@@ -39,6 +41,7 @@ namespace com.aoyon.AutoConfigureTexture
             PropertyField(OptimizeMipMap);
             PropertyField(OptimizeMaterial);
             PropertyField(ResolutionReduction);
+            PropertyField(IsPCOnly);
             serializedObject.ApplyModifiedProperties();
         }
 
