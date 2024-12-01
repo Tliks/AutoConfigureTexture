@@ -12,6 +12,10 @@
 ### Fixed
 
 ### Security
+## [0.2.3] - 2024-12-01
+### Fixed
+- incorrect changelogUrl
+
 ## [0.2.2] - 2024-12-01
 ### Added
 - option to run on PC only
