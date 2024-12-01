@@ -12,6 +12,13 @@
 ### Fixed
 
 ### Security
+## [0.2.2] - 2024-12-01
+### Added
+- option to run on PC only
+
+### Changed
+- VpmDependencies of TexTransTool to >=0.8.7 < 0.9.0-beta.0
+- By default it now only works on PC platform
 
 ## [0.2.1] - 2024-11-29
 ### Changed
