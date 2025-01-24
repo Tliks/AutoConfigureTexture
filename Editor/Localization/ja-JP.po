@@ -24,3 +24,6 @@ msgstr "マテリアルを最適化"
 
 msgid "ResolutionReduction"
 msgstr "解像度を削減"
+
+msgid "IsPCOnly"
+msgstr "PCでのみ動作"
