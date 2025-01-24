@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using VRC.SDKBase;
 
@@ -30,5 +31,6 @@ namespace com.aoyon.AutoConfigureTexture
         public bool OptimizeMaterial = true;
         public Reduction ResolutionReduction = Reduction.Normal;
         public bool IsPCOnly = true;
+        public List<Texture2D> Exclude = new();
     }
 }

@@ -27,3 +27,6 @@ msgstr "Resolution Reduction"
 
 msgid "IsPCOnly"
 msgstr "IsPCOnly"
+
+msgid "Exclude"
+msgstr "Exclude"

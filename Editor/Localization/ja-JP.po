@@ -27,3 +27,6 @@ msgstr "解像度を削減"
 
 msgid "IsPCOnly"
 msgstr "PCでのみ動作"
+
+msgid "Exclude"
+msgstr "除外"

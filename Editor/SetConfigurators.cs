@@ -4,6 +4,7 @@ using System.Linq;
 using UnityEngine;
 using UnityEditor;
 using net.rs64.TexTransTool;
+using nadena.dev.ndmf;
 
 namespace com.aoyon.AutoConfigureTexture
 {    
@@ -20,6 +21,12 @@ namespace com.aoyon.AutoConfigureTexture
                     return null;
                 }
             }
+            
+            // 除外するTexture2DのObjectReferenceを取得
+            var excludes = component.Exclude
+                .Where(t => t != null)
+                .Select(t => ObjectRegistry.GetReference(t))
+                .ToHashSet();
 
             // 既にTextureConfiguratorを設定しているテクスチャを取得
             var exists = component.GetComponentsInChildren<TextureConfigurator>()
@@ -43,8 +50,11 @@ namespace com.aoyon.AutoConfigureTexture
 
                 // Texture2D以外は現状何もしない
                 if (texture is not Texture2D tex2d) continue;
-                // 既存の設定をoverrideしないようにする
+                // 既存の設定がある場合除外
                 if (exists.Contains(tex2d)) continue;
+                // 除外設定したテクスチャと参照が同一の場合除外
+                var reference = ObjectRegistry.GetReference(tex2d);
+                if (excludes.Any(r => r.Equals(reference))) continue;
 
                 // TextureConfiguratorを生成
                 var go = new GameObject(tex2d.name);
