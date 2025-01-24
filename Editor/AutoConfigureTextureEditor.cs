@@ -13,6 +13,7 @@ namespace com.aoyon.AutoConfigureTexture
         private SerializedProperty OptimizeMaterial;
         private SerializedProperty ResolutionReduction;
         private SerializedProperty IsPCOnly;
+        private SerializedProperty Exclude;
 
         private void OnEnable()
         {
@@ -23,6 +24,7 @@ namespace com.aoyon.AutoConfigureTexture
             OptimizeMaterial = serializedObject.FindProperty(nameof(AutoConfigureTexture.OptimizeMaterial));
             ResolutionReduction = serializedObject.FindProperty(nameof(AutoConfigureTexture.ResolutionReduction));
             IsPCOnly = serializedObject.FindProperty(nameof(AutoConfigureTexture.IsPCOnly));
+            Exclude = serializedObject.FindProperty(nameof(AutoConfigureTexture.Exclude));
         }
 
         public override void OnInspectorGUI()
@@ -42,6 +44,7 @@ namespace com.aoyon.AutoConfigureTexture
             PropertyField(OptimizeMaterial);
             PropertyField(ResolutionReduction);
             PropertyField(IsPCOnly);
+            PropertyField(Exclude);
             serializedObject.ApplyModifiedProperties();
         }
 

@@ -24,3 +24,9 @@ msgstr "Optimize Material"
 
 msgid "ResolutionReduction"
 msgstr "Resolution Reduction"
+
+msgid "IsPCOnly"
+msgstr "IsPCOnly"
+
+msgid "Exclude"
+msgstr "Exclude"
