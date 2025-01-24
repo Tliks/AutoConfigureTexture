@@ -12,6 +12,14 @@
 ### Fixed
 
 ### Security
+
+## [0.3.0] - 2024-1-25
+### Added
+- Specify textures to exclude from execution
+
+### Fixed
+- localization
+
 ## [0.2.3] - 2024-12-01
 ### Fixed
 - incorrect changelogUrl
