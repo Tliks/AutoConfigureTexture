@@ -12,6 +12,7 @@ namespace com.aoyon.AutoConfigureTexture
         private SerializedProperty OptimizeMipMap;
         private SerializedProperty OptimizeMaterial;
         private SerializedProperty ResolutionReduction;
+        private SerializedProperty UseGradient;
         private SerializedProperty IsPCOnly;
         private SerializedProperty Exclude;
 
@@ -23,6 +24,7 @@ namespace com.aoyon.AutoConfigureTexture
             OptimizeMipMap = serializedObject.FindProperty(nameof(AutoConfigureTexture.OptimizeMipMap));
             OptimizeMaterial = serializedObject.FindProperty(nameof(AutoConfigureTexture.OptimizeMaterial));
             ResolutionReduction = serializedObject.FindProperty(nameof(AutoConfigureTexture.ResolutionReduction));
+            UseGradient = serializedObject.FindProperty(nameof(AutoConfigureTexture.UseGradient));
             IsPCOnly = serializedObject.FindProperty(nameof(AutoConfigureTexture.IsPCOnly));
             Exclude = serializedObject.FindProperty(nameof(AutoConfigureTexture.Exclude));
         }
@@ -43,6 +45,13 @@ namespace com.aoyon.AutoConfigureTexture
             PropertyField(OptimizeMipMap);
             PropertyField(OptimizeMaterial);
             PropertyField(ResolutionReduction);
+            if (ResolutionReduction.enumValueIndex != (int)Reduction.None)
+            {
+                using (new EditorGUI.IndentLevelScope())
+                {
+                    PropertyField(UseGradient);
+                }
+            }
             PropertyField(IsPCOnly);
             PropertyField(Exclude);
             serializedObject.ApplyModifiedProperties();
@@ -54,10 +63,10 @@ namespace com.aoyon.AutoConfigureTexture
         }
 
         [MenuItem("CONTEXT/AutoConfigureTexture/Attach TextureConfigurator")]
-        private static void SetTextureConfigurator(MenuCommand command)
+        async private static void AttachTextureConfigurators(MenuCommand command)
         {
             var component = command.context as AutoConfigureTexture;
-            var go = AttachConfigurators.Apply(component, component.transform);
+            var go = await SetTextureConfigurator.Apply(component, component.transform);
             Undo.RegisterCreatedObjectUndo(go, "Auto Configure Texture Setup");
             Selection.activeGameObject = go;
             EditorGUIUtility.PingObject(go);

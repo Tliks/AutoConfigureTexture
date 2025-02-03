@@ -49,7 +49,7 @@ namespace com.aoyon.AutoConfigureTexture
             return true;
         }
 
-        private static Mesh GetMesh(Renderer renderer, Dictionary<Renderer, Mesh> meshes)
+        private Mesh GetMesh(Renderer renderer, Dictionary<Renderer, Mesh> meshes)
         {
             if (renderer is SkinnedMeshRenderer skinnedMeshRenderer)
             {
@@ -77,7 +77,7 @@ namespace com.aoyon.AutoConfigureTexture
             }
         }
 
-        private static bool IsMeshUnderHeight(Transform transform, Mesh mesh, int subMeshIndex, float height)
+        private bool IsMeshUnderHeight(Transform transform, Mesh mesh, int subMeshIndex, float height)
         {
             var vertices = mesh.vertices;
 

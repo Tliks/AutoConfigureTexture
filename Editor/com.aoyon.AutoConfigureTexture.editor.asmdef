@@ -6,6 +6,7 @@
         "net.rs64.tex-trans-tool.runtime",
         "com.aoyon.AutoConfigureTexture.runtime",
         "lilToon.Editor",
+        "net.rs64.tex-trans-core",
         "nadena.dev.modular-avatar.core"
     ],
     "includePlatforms": [

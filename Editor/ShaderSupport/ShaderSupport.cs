@@ -1,0 +1,81 @@
+using System.Linq;
+using UnityEngine;
+
+namespace com.aoyon.AutoConfigureTexture
+{
+    public static class ShaderSupport
+    {
+        private static readonly IShaderSupport[] _shaderSupports;
+
+        static ShaderSupport()
+        {
+            _shaderSupports = Utils.GetImplementClasses<IShaderSupport>();
+        }
+
+        private static IShaderSupport GetShaderSupport(Shader shader)
+        {
+            return _shaderSupports.Where(s => s.IsTarget(shader)).First();
+        }
+
+        private static IShaderSupport GetShaderSupport(Material material)
+        {
+            return _shaderSupports.Where(s => s.IsTarget(material)).First();
+        }
+
+        public static TextureChannel GetTextureChannel(Shader shader, string property)
+        {
+            var shaderSupport = GetShaderSupport(shader);
+            if (shaderSupport == null)
+                return TextureChannel.Unknown;
+           return shaderSupport.GetTextureChannel(shader, property);
+        }
+
+        public static TextureUsage GetTextureUsage(Shader shader, string property)
+        {
+            // _MainTexはUnityの予約語らしいので辞書を使わず返す
+            if (property == "_MainTex") 
+                return TextureUsage.MainTex; 
+            var shaderSupport = GetShaderSupport(shader);
+            if (shaderSupport == null)
+                return TextureUsage.Unknown;
+            return shaderSupport.GetTextureUsage(shader, property);
+        }
+
+        public static bool IsVertexShader(Shader shader, string property) 
+        {
+            var shaderSupport = GetShaderSupport(shader);
+            if (shaderSupport == null)
+                return true;
+            return shaderSupport.IsVertexShader(shader, property);
+        }
+
+        public static int GetChannels(Shader shader, string property)
+        {
+            var textureChannel = GetTextureChannel(shader, property);
+            switch (textureChannel)
+            {
+                case TextureChannel.Unknown: 
+                    return -1;
+                case TextureChannel.R:
+                case TextureChannel.G:
+                case TextureChannel.B:
+                case TextureChannel.A: 
+                    return 1;
+                case TextureChannel.RG:
+                case TextureChannel.RB:
+                case TextureChannel.RA:
+                case TextureChannel.GB:
+                case TextureChannel.GA:
+                case TextureChannel.BA: 
+                    return 2;
+                case TextureChannel.RGB:
+                case TextureChannel.RGA: 
+                    return 3;
+                case TextureChannel.RGBA: 
+                    return 4;
+                default: 
+                    return -1;
+            }
+        }
+    }
+}

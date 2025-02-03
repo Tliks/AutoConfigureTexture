@@ -1,0 +1,74 @@
+#pragma kernel CSMain
+
+RWTexture2D<float2> Result;
+Texture2D<float4> InputTexture;
+Texture2D<float> MaskTexture;
+int Width;
+int Height;
+
+// Sobelフィルタの定義
+static const int sobelX[3][3] = {
+    {-1, 0, 1},
+    {-2, 0, 2},
+    {-1, 0, 1}
+};
+
+static const int sobelY[3][3] = {
+    {-1, -2, -1},
+    { 0,  0,  0},
+    { 1,  2,  1}
+};
+
+[numthreads(8,8,1)]
+void CSMain (uint3 id : SV_DispatchThreadID)
+{
+    if (id.x >= (uint)Width || id.y >= (uint)Height)
+    {
+        return;
+    }
+
+    float maskColor = MaskTexture[id.xy];
+    if (maskColor > 0) {
+        float gradientX_r = 0;
+        float gradientY_r = 0;
+        float gradientX_g = 0;
+        float gradientY_g = 0;
+        float gradientX_b = 0;
+        float gradientY_b = 0;
+        float gradientX_a = 0;
+        float gradientY_a = 0;
+
+        for (int y = -1; y <= 1; ++y)
+        {
+            for (int x = -1; x <= 1; ++x)
+            {
+                int sobelXValue = sobelX[y + 1][x + 1];
+                int sobelYValue = sobelY[y + 1][x + 1];
+                int sampleX = min(Width - 1, max(0, (int)id.x + x));
+                int sampleY = min(Height - 1, max(0, (int)id.y + y));
+                float4 sample = InputTexture.Load(int3(sampleX, sampleY, 0));
+                gradientX_r += sample.r * sobelXValue;
+                gradientY_r += sample.r * sobelYValue;
+                gradientX_g += sample.g * sobelXValue;
+                gradientY_g += sample.g * sobelYValue;
+                gradientX_b += sample.b * sobelXValue;
+                gradientY_b += sample.b * sobelYValue;
+                gradientX_a += sample.a * sobelXValue;
+                gradientY_a += sample.a * sobelYValue;
+            }
+        }
+
+        float gradientMagnitudeR = sqrt(gradientX_r * gradientX_r + gradientY_r * gradientY_r);
+        float gradientMagnitudeG = sqrt(gradientX_g * gradientX_g + gradientY_g * gradientY_g);
+        float gradientMagnitudeB = sqrt(gradientX_b * gradientX_b + gradientY_b * gradientY_b);
+        float gradientMagnitudeA = sqrt(gradientX_a * gradientX_a + gradientY_a * gradientY_a);
+
+        float maxGradient = max(max(gradientMagnitudeR, gradientMagnitudeG), max(gradientMagnitudeB, gradientMagnitudeA));
+        float gradientValue = maxGradient / sqrt(8);
+        Result[id.xy] = float2(gradientValue, 1.0f);
+    }
+    else
+    {
+        Result[id.xy] = float2(0.0f, 0.0f);
+    }
+}

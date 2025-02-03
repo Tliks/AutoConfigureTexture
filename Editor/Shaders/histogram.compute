@@ -1,0 +1,16 @@
+#pragma kernel CSMain
+
+RWTexture2D<float2> _InputTexture;
+RWStructuredBuffer<int> _HistogramBuffer;
+int _HistogramBins;
+
+[numthreads(8,8,1)]
+void CSMain (uint3 id : SV_DispatchThreadID)
+{
+    float2 value = _InputTexture[id.xy];
+    if (value.g > 0.0f)
+    {
+        int bin = clamp((int)(value.r * _HistogramBins), 0, _HistogramBins - 1);
+        InterlockedAdd(_HistogramBuffer[bin], 1);
+    }
+}

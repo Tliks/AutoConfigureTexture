@@ -37,7 +37,7 @@ namespace com.aoyon.AutoConfigureTexture
 
                 foreach (var component in components)
                 {
-                    AttachConfigurators.Apply(component, root.transform);
+                    SetTextureConfigurator.Apply(component, root.transform);
 
                     Object.DestroyImmediate(component);
                 }
