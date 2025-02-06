@@ -8,12 +8,17 @@
 ### Deprecated
 
 ### Removed
-- Optimize Material
-    - may fix an issue where the preview renderertexture was not displayed correctly in VirtualLens2.
 
 ### Fixed
 
 ### Security
+
+## [0.4.0] - 2024-2-06
+### Removed
+- Optimize Material
+    - This change may fix an issue where the preview RendererTexture was not displayed correctly in VirtualLens2.
+    - Auto Configure Texture was searching for a target to apply to after this function has deleted textures that were not used.
+    - so from now on, TexTransTool may display logs that do not have any applicable targets. This behavior is currently normal.
 
 ## [0.3.0] - 2024-1-25
 ### Added
