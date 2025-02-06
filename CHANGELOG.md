@@ -8,6 +8,8 @@
 ### Deprecated
 
 ### Removed
+- Optimize Material
+    - may fix an issue where the preview renderertexture was not displayed correctly in VirtualLens2.
 
 ### Fixed
 

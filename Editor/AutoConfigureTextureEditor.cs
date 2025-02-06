@@ -10,7 +10,6 @@ namespace com.aoyon.AutoConfigureTexture
         private SerializedProperty FormatMode;
         private SerializedProperty MaintainCrunch;
         private SerializedProperty OptimizeMipMap;
-        private SerializedProperty OptimizeMaterial;
         private SerializedProperty ResolutionReduction;
         private SerializedProperty IsPCOnly;
         private SerializedProperty Exclude;
@@ -21,7 +20,6 @@ namespace com.aoyon.AutoConfigureTexture
             FormatMode = serializedObject.FindProperty(nameof(AutoConfigureTexture.FormatMode));
             MaintainCrunch = serializedObject.FindProperty(nameof(AutoConfigureTexture.MaintainCrunch));
             OptimizeMipMap = serializedObject.FindProperty(nameof(AutoConfigureTexture.OptimizeMipMap));
-            OptimizeMaterial = serializedObject.FindProperty(nameof(AutoConfigureTexture.OptimizeMaterial));
             ResolutionReduction = serializedObject.FindProperty(nameof(AutoConfigureTexture.ResolutionReduction));
             IsPCOnly = serializedObject.FindProperty(nameof(AutoConfigureTexture.IsPCOnly));
             Exclude = serializedObject.FindProperty(nameof(AutoConfigureTexture.Exclude));
@@ -41,7 +39,6 @@ namespace com.aoyon.AutoConfigureTexture
                 }
             }
             PropertyField(OptimizeMipMap);
-            PropertyField(OptimizeMaterial);
             PropertyField(ResolutionReduction);
             PropertyField(IsPCOnly);
             PropertyField(Exclude);
