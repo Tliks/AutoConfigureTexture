@@ -15,7 +15,7 @@ namespace com.aoyon.AutoConfigureTexture
         protected override void Configure()
         {
             InPhase(BuildPhase.Generating).
-            Run("Attach TextureConfigurator", ctx =>
+            Run("Attach TextureConfigurator", async ctx =>
             {
                 var root = ctx.AvatarRootObject;
 
@@ -23,7 +23,7 @@ namespace com.aoyon.AutoConfigureTexture
 
                 foreach (var component in components)
                 {
-                    SetTextureConfigurator.Apply(component, root.transform);
+                    await SetTextureConfigurator.Apply(component, root.transform);
 
                     Object.DestroyImmediate(component);
                 }

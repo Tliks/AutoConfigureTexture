@@ -60,7 +60,7 @@ namespace com.aoyon.AutoConfigureTexture
         }
 
         [MenuItem("CONTEXT/AutoConfigureTexture/Attach TextureConfigurator")]
-        async private static void AttachTextureConfigurators(MenuCommand command)
+        private async static void AttachTextureConfigurators(MenuCommand command)
         {
             var component = command.context as AutoConfigureTexture;
             var go = await SetTextureConfigurator.Apply(component, component.transform);
