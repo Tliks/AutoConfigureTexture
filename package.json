@@ -1,7 +1,7 @@
 {
   "name": "com.aoyon.auto-configure-texture",
   "displayName": "Auto Configure Texture",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "unity": "2022.3",
   "description": "Easy VRAM Reduction, Non-Destructively",
   "author": {

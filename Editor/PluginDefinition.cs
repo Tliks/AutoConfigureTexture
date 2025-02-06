@@ -14,20 +14,6 @@ namespace com.aoyon.AutoConfigureTexture
 
         protected override void Configure()
         {
-
-            InPhase(BuildPhase.Resolving).          
-            Run("Invoke Shader Optimization", ctx =>
-            {
-                var root = ctx.AvatarRootObject;
-
-                var components = root.GetComponentsInChildren<AutoConfigureTexture>();
-
-                foreach (var component in components)
-                {
-                    OptimizeMaterial.Apply(ctx, component);
-                }
-            });
-
             InPhase(BuildPhase.Generating).
             Run("Attach TextureConfigurator", ctx =>
             {
