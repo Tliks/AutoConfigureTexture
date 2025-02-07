@@ -13,6 +13,10 @@
 
 ### Security
 
+## [0.4.1] - 2024-2-07
+### Changed
+- update vpmDependencies of TTT
+
 ## [0.4.0] - 2024-2-06
 ### Removed
 - Optimize Material
