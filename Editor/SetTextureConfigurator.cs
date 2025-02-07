@@ -11,7 +11,7 @@ namespace com.aoyon.AutoConfigureTexture
 {    
     public class SetTextureConfigurator
     {
-        public async static Task<GameObject> Apply(AutoConfigureTexture component, Transform parent)
+        public async static GameObject Apply(AutoConfigureTexture component, Transform parent)
         {
             if (component == null || (!component.OptimizeTextureFormat && !component.OptimizeMipMap && component.ResolutionReduction == Reduction.None))
                 return null;
@@ -22,6 +22,10 @@ namespace com.aoyon.AutoConfigureTexture
                     return null;
                 }
             }
+        }
+        
+        public async static Task<GameObject> ApplyImpl(AutoConfigureTexture component, Transform parent)
+        {
             
             var root = new GameObject("Auto Texture Configurator");
             root.transform.SetParent(parent);
@@ -48,7 +52,7 @@ namespace com.aoyon.AutoConfigureTexture
             {
                 tasks.Add(ProcessAdjuster(adjuster, configurators, component.gameObject, component));
             }
-            await Task.WhenAll(tasks);
+            await Task.WhenAll(tasks).ConfigureAwait(false);
 
             return root;
         }

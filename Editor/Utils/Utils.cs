@@ -67,7 +67,7 @@ namespace com.aoyon.AutoConfigureTexture
             if (!GraphicsFormatUtility.HasAlphaChannel(texture.format))
                 return false;
 
-            var readableTexture = info.GetReadbleTexture2D();
+            var readableTexture = info.ReadbleTexture2D;
             return HasAlphaInData(readableTexture);
         }
 

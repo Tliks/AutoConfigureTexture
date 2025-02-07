@@ -125,17 +125,6 @@ namespace com.aoyon.AutoConfigureTexture
             return textureInfos.Values;
         }
 
-        public Texture2D GetReadbleTexture2D()
-        {
-            if (_readableTexture != null) {
-                return _readableTexture;
-            }
-            else {
-                _readableTexture = Utils.EnsureReadableTexture2D(Texture as Texture2D);
-                return _readableTexture;
-            } 
-        }
-
         private TextureUsage AssignPrimaryUsage()
         {
             // 不明な使用用途は無視し既知の情報のみで判断

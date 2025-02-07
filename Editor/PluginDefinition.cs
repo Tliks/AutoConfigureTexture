@@ -15,7 +15,7 @@ namespace com.aoyon.AutoConfigureTexture
         protected override void Configure()
         {
             InPhase(BuildPhase.Generating).
-            Run("Attach TextureConfigurator", async ctx =>
+            Run("Attach TextureConfigurator", ctx =>
             {
                 var root = ctx.AvatarRootObject;
 
