@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace com.aoyon.AutoConfigureTexture
 {
-    public static class ShaderSupport
+    internal static class ShaderSupport
     {
         private static readonly IShaderSupport[] _shaderSupports;
 
@@ -14,12 +14,15 @@ namespace com.aoyon.AutoConfigureTexture
 
         private static IShaderSupport GetShaderSupport(Shader shader)
         {
+            if (shader == null) return null;
             return _shaderSupports.Where(s => s.IsTarget(shader)).First();
         }
 
         private static IShaderSupport GetShaderSupport(Material material)
         {
-            return _shaderSupports.Where(s => s.IsTarget(material)).First();
+            var shader = material?.shader;
+            if (shader == null) return null;
+            return GetShaderSupport(shader);
         }
 
         public static TextureChannel GetTextureChannel(Shader shader, string property)

@@ -1,39 +1,43 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 using UnityEngine;
 using UnityEditor;
 using net.rs64.TexTransTool;
-using System.Threading.Tasks;
 
 namespace com.aoyon.AutoConfigureTexture
 {    
-    public class AdjustTextureResolution : ITextureAdjuster
+    internal class AdjustTextureResolution : ITextureAdjuster
     {
         public bool ShouldProcess => _shouldProcess;
         private bool _shouldProcess = false;
 
-        private Reduction _reduction;
-        private bool _useGradient;
+        private AutoConfigureTexture _config;
         private MaterialArea _materialArea;
         private Dictionary<TextureInfo, float> _intensities = new();
 
-        public async Task Init(GameObject root, IEnumerable<TextureInfo> textureinfos, AutoConfigureTexture config)
+        public void Init(GameObject root, IEnumerable<TextureInfo> textureinfos, AutoConfigureTexture config)
         {
-            _reduction = config.ResolutionReduction;
-            _useGradient = config.UseGradient;
-
-            if (_reduction == Reduction.None)
+            if (config.ResolutionReduction == Reduction.None)
                 _shouldProcess = false;;
             _shouldProcess = true;
 
-            if (_shouldProcess)
-            {
-                _materialArea = new MaterialArea(root.transform);
+            _config = config;
 
-                _intensities = (await TextureGradientCalculator.CalculateGradientIntensityAsync(textureinfos.ToArray()))
-                    .Select((intensity, index) => (textureinfos.ElementAt(index), intensity))
-                    .ToDictionary(x => x.Item1, x => x.Item2);
+            if (_shouldProcess)
+            {   
+                if (_config.UsePosition)
+                {
+                    _materialArea = new MaterialArea(root.transform);
+                }
+
+                if (config.UseGradient)
+                {
+                    _intensities = TextureGradientCalculator.CalculateGradientIntensityAsync(textureinfos.ToArray())
+                        .Select((intensity, index) => (textureinfos.ElementAt(index), intensity))
+                        .ToDictionary(x => x.Item1, x => x.Item2);
+                }
             }
             return;
         }
@@ -80,6 +84,8 @@ namespace com.aoyon.AutoConfigureTexture
                 throw new Exception($"Intensity not found for texture: {info.Texture.name}");
             }
 
+            var reduction = _config.ResolutionReduction;
+
             // | Reduction | MainTex    | NormalMap  | Emission   | AOMap     | NormalMapSub | Others    | MatCap    |
             // |-----------|------------|------------|------------|-----------|--------------|-----------|-----------|
             // | Low       |     -      |     -      |     -      |    -      |   1/2(512)   | 1/2(512)  | 1/2(256)  |
@@ -87,7 +93,7 @@ namespace com.aoyon.AutoConfigureTexture
             // | High      | 1/2(512)   | 1/2(512)   | 1/4(512)   | 1/4(512)  |   1/4(512)   | 1/4(512)  | 1/4(256)  |
             // | Ultra     | 1/4(512)   | 1/4(512)   | 1/4(256)   | 1/4(256)  |   1/4(256)   | 1/4(256)  | 1/4(128)  |
             
-            if (_reduction == Reduction.Low)
+            if (reduction == Reduction.Low)
             {
                 switch (usage)
                 {   
@@ -98,69 +104,69 @@ namespace com.aoyon.AutoConfigureTexture
                         break;
                     case TextureUsage.NormalMapSub:
                     case TextureUsage.Others:
-                        TryReduceResolution(ref resolution, 2, 512);
+                        TryReduceResolution(ref resolution, 1, 512, info);
                         break;
                     case TextureUsage.MatCap:
-                        TryReduceResolution(ref resolution, 2, 256);
+                        TryReduceResolution(ref resolution, 1, 256, info);
                         break;
                 }
             }
-            else if (_reduction == Reduction.Normal)
+            else if (reduction == Reduction.Normal)
             {
                 switch (usage)
                 {   
                     case TextureUsage.MainTex:
                     case TextureUsage.NormalMap:
-                        TryReduceResolutionIfUnderHeight(ref resolution, 2, 512, info);
+                        TryReduceResolution(ref resolution, 0, 512, info);
                         break;
                     case TextureUsage.Emission:
-                        TryReduceResolution(ref resolution, 2, 512);
+                        TryReduceResolution(ref resolution, 1, 512, info);
                         break;
                     case TextureUsage.AOMap:
                     case TextureUsage.NormalMapSub:
                     case TextureUsage.Others:
-                        TryReduceResolution(ref resolution, 4, 512);
+                        TryReduceResolution(ref resolution, 2, 512, info);
                         break;
                     case TextureUsage.MatCap:
-                        TryReduceResolution(ref resolution, 4, 256);
+                        TryReduceResolution(ref resolution, 2, 256, info);
                         break;
                 }
             }
-            else if (_reduction == Reduction.High)
+            else if (reduction == Reduction.High)
             {
                 switch (usage)
                 {   
                     case TextureUsage.MainTex:
                     case TextureUsage.NormalMap:
-                        TryReduceResolution(ref resolution, 2, 512);
+                        TryReduceResolution(ref resolution, 0, 512, info, 0.3f);
                         break;
                     case TextureUsage.Emission:
                     case TextureUsage.AOMap:
                     case TextureUsage.NormalMapSub:
                     case TextureUsage.Others:
-                        TryReduceResolution(ref resolution, 4, 512);
+                        TryReduceResolution(ref resolution, 2, 512, info);
                         break;
                     case TextureUsage.MatCap:
-                        TryReduceResolution(ref resolution, 4, 256);
+                        TryReduceResolution(ref resolution, 2, 256, info);
                         break;
                 }
             }
-            else if (_reduction == Reduction.Ultra)
+            else if (reduction == Reduction.Ultra)
             {
                 switch (usage)
                 {   
                     case TextureUsage.MainTex:
                     case TextureUsage.NormalMap:
-                        TryReduceResolution(ref resolution, 4, 512);
+                        TryReduceResolution(ref resolution, 1, 512, info);
                         break;
                     case TextureUsage.Emission:
                     case TextureUsage.AOMap:
                     case TextureUsage.NormalMapSub:
                     case TextureUsage.Others:
-                        TryReduceResolution(ref resolution, 4, 256);
+                        TryReduceResolution(ref resolution, 2, 256, info);
                         break;
                     case TextureUsage.MatCap:
-                        TryReduceResolution(ref resolution, 4, 128);
+                        TryReduceResolution(ref resolution, 2, 128, info);
                         break;
                 }
             }
@@ -169,17 +175,62 @@ namespace com.aoyon.AutoConfigureTexture
             return resolution != width;
         }
 
+        private float GetUsagePririty(TextureUsage usage)
+        {
+            switch (usage)
+            {   
+                case TextureUsage.MainTex:
+                case TextureUsage.NormalMap:
+                    return 1.0f;
+                case TextureUsage.Emission:
+                    return 0.5f;
+                case TextureUsage.AOMap:
+                case TextureUsage.NormalMapSub:
+                case TextureUsage.Others:
+                    return 0.3f;
+                case TextureUsage.MatCap:
+                    return 0.2f;
+                default:
+                    throw new Exception("Unknown TextureUsage");
+            }
+        }
+
+        private float GetReductionUsage(Reduction reduction)
+        {
+            switch (reduction)
+            {
+                case Reduction.Low:
+                    return 1.0f;
+                case Reduction.Normal:
+                    return 0.8f;
+                case Reduction.High:
+                    return 0.5f;
+                case Reduction.Ultra:
+                    return 0.3f;
+                default:
+                    throw new Exception("Unknown Reduction");
+            }
+        }
+
         // 解像度が指定された最小値を下回らないようにしつつ、指定された除数で解像度を減少させます。
         // 現在の値が既に最小値を下回っている場合は現在の値を用います。
-        private static void TryReduceResolution(ref int currentValue, int divisor, int minimum)
+        private void TryReduceResolution(ref int currentValue, int baseStep, int minimum, TextureInfo info, float offset = 0f)
         {
-            if (!Mathf.IsPowerOfTwo(divisor)) 
-                throw new InvalidOperationException("divisor must be a power of two");
-
             if (currentValue <= minimum)
                 return;
 
-            currentValue = Mathf.Max(currentValue / divisor, minimum);
+            if (AdditionalDivisor(info, offset)) baseStep++;
+
+            for (int i = 0; i < baseStep; i++)
+            {
+                currentValue = Mathf.Max(currentValue / 2, minimum);
+            }
+        }
+        private bool AdditionalDivisor(TextureInfo info, float offset)
+        {
+            if (!_intensities.TryGetValue(info, out float identity)) throw new Exception();
+            var reduction = Mathf.Lerp(1f, 0f, identity);
+            return Mathf.RoundToInt(offset + reduction) != 0;
         }
 
         // テクスチャが使用されているマテリアルがアバターの下部でのみ使用されている条件を追加。

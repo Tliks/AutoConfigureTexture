@@ -5,7 +5,7 @@ using UnityEngine;
 namespace com.aoyon.AutoConfigureTexture
 {
 
-    public class lilToonSupport : IShaderSupport
+    internal class lilToonSupport : IShaderSupport
     {
         static Dictionary<string, PropertyData> lilToonProperty = new Dictionary<string, PropertyData>()
         {
@@ -111,23 +111,6 @@ namespace com.aoyon.AutoConfigureTexture
             //{ "_TriMask",                new PropertyData(TextureChannel.None) }  // 不明
         };
 
-        private PropertyData? GetPropertyData(Shader shader, string property)
-        {
-            Dictionary<string, PropertyData> shaderDictionary = null;
-
-            if (IsTarget(shader))
-                shaderDictionary = lilToonProperty;
-
-            if (shaderDictionary != null && shaderDictionary.TryGetValue(property, out var channelValues))
-            {
-                return channelValues;
-            }
-            else
-            {
-                return null;
-            }
-        }
-
         public bool IsTarget(Shader shader)
         {
             if(shader == null) return false;
@@ -136,42 +119,24 @@ namespace com.aoyon.AutoConfigureTexture
             return !string.IsNullOrEmpty(shaderPath) && shaderPath.Contains(".lilcontainer");
         }
 
-        public bool IsTarget(Material material)
-        {
-            if(material == null) return false;
-            return IsTarget(material.shader);
-        }
-
         public TextureChannel GetTextureChannel(Shader shader, string property)
         {
-            var propertydata = GetPropertyData(shader, property);
-            if (propertydata is PropertyData data)
-            {
-                return Utils.IsOpaqueShader(shader) 
-                    ? data.OpaqueChannel
-                    : data.TransparentChannel;
-            }
-            return TextureChannel.Unknown;
+            if (!lilToonProperty.TryGetValue(property, out var data)) return TextureChannel.Unknown;
+            return Utils.IsOpaqueShader(shader) 
+                ? data.OpaqueChannel
+                : data.TransparentChannel;
         }
 
         public TextureUsage GetTextureUsage(Shader shader, string property)
         {
-            var propertydata = GetPropertyData(shader, property);
-            if (propertydata is PropertyData data)
-            {
-                return data.TextureUsage;
-            }
-            return TextureUsage.Unknown;
+            if (!lilToonProperty.TryGetValue(property, out var data)) return TextureUsage.Unknown;
+            return data.TextureUsage;
         }
 
         public bool IsVertexShader(Shader shader, string property)
         {
-            var propertydata = GetPropertyData(shader, property);
-            if (propertydata is PropertyData data)
-            {
-                return data.IsVertex;
-            }
-            return true;
+            if (!lilToonProperty.TryGetValue(property, out var data)) return true;
+            return data.IsVertex;
         }
 
     }

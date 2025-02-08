@@ -6,15 +6,14 @@ using net.rs64.TexTransTool;
 
 namespace com.aoyon.AutoConfigureTexture
 {    
-    public class RemoveMipMaps : ITextureAdjuster
+    internal class RemoveMipMaps : ITextureAdjuster
     {
         public bool ShouldProcess => _shouldProcess;
         private bool _shouldProcess = false;
 
-        public async Task Init(GameObject root, IEnumerable<TextureInfo> textureinfos, AutoConfigureTexture config)
+        public void Init(GameObject root, IEnumerable<TextureInfo> textureinfos, AutoConfigureTexture config)
         {
             _shouldProcess = config.OptimizeMipMap;
-            await Task.Delay(0);
             return;
         }
         public bool Validate(TextureInfo info)

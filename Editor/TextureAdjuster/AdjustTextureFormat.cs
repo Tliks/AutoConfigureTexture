@@ -8,14 +8,14 @@ using net.rs64.TexTransTool;
 
 namespace com.aoyon.AutoConfigureTexture
 {
-    public class AdjustTextureFormat : ITextureAdjuster
+    internal class AdjustTextureFormat : ITextureAdjuster
     {
         public bool ShouldProcess => _shouldProcess;
         private bool _shouldProcess = false;
 
         private AutoConfigureTexture _config;
 
-        public async Task Init(GameObject root, IEnumerable<TextureInfo> textureinfos, AutoConfigureTexture config)
+        public void Init(GameObject root, IEnumerable<TextureInfo> textureinfos, AutoConfigureTexture config)
         {
             _config = config;
             BuildTarget currentBuildTarget = EditorUserBuildSettings.activeBuildTarget;
@@ -26,7 +26,6 @@ namespace com.aoyon.AutoConfigureTexture
                 _shouldProcess = false;
             }
             _shouldProcess = true;
-            await Task.Delay(0);
             return;
         }
         public bool Validate(TextureInfo info)

@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Reflection;
 using UnityEngine;
 using VRC.SDKBase;
 
@@ -31,11 +30,12 @@ namespace com.aoyon.AutoConfigureTexture
         public bool MaintainCrunch = true;
         public bool OptimizeMipMap = true;
         public Reduction ResolutionReduction = Reduction.Normal;
+        public bool UsePosition = true;
         public bool UseGradient = true;
         public bool IsPCOnly = true;
         public List<Texture2D> Exclude = new();
 
-        // 削除された機能。バージョンを下げたときの互換性用にフィールドは残すが、次のマイナーあたりで削除する。
+        // 削除された機能。バージョンを下げたときの互換性のためにフィールドは残すが、次のマイナーあたりで削除する。
         [Obsolete] public bool OptimizeMaterial = false; 
     }
 }

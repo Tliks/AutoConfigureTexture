@@ -60,8 +60,8 @@ namespace com.aoyon.AutoConfigureTexture
                 //var islands = _islandHandler.GetIslands(_targetRenderer.sharedMesh, 0, 0);
                 var swa = System.Diagnostics.Stopwatch.StartNew();
                 processor = new TextureGradientProcessor();
-                var task = processor.CalculateIntensityAsync(sourceTexture, mesh);
-                intensity = await task;
+                //var task = processor.CalculateIntensityAsync(sourceTexture, mesh);
+                //intensity = await task.ConfigureAwait(false);
                 swa.Stop();
                 Debug.Log($"all: {swa.ElapsedMilliseconds}ms");
                 processtim = swa.ElapsedMilliseconds;

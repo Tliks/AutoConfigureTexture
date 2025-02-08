@@ -2,16 +2,15 @@ using UnityEngine;
 
 namespace com.aoyon.AutoConfigureTexture
 {    
-    public interface IShaderSupport
+    internal interface IShaderSupport
     {
         public bool IsTarget(Shader shader);
-        public bool IsTarget(Material material);
         public TextureChannel GetTextureChannel(Shader shader, string property);
         public TextureUsage GetTextureUsage(Shader shader, string property);
         public bool IsVertexShader(Shader shader, string property);
     }
     
-    struct PropertyData
+    internal struct PropertyData
     {
         public TextureChannel OpaqueChannel;
         public TextureChannel TransparentChannel;

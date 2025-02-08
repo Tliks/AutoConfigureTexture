@@ -3,11 +3,10 @@
     "rootNamespace": "",
     "references": [
         "nadena.dev.ndmf",
-        "net.rs64.tex-trans-tool.runtime",
+        "nadena.dev.ndmf.runtime",
         "com.aoyon.AutoConfigureTexture.runtime",
-        "lilToon.Editor",
-        "net.rs64.tex-trans-core",
-        "nadena.dev.modular-avatar.core"
+        "net.rs64.tex-trans-tool.runtime",
+        "net.rs64.tex-trans-core"
     ],
     "includePlatforms": [
         "Editor"

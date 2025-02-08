@@ -1,17 +1,17 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 using UnityEngine;
 using UnityEditor;
 using net.rs64.TexTransTool;
 using nadena.dev.ndmf;
+using nadena.dev.ndmf.runtime;
 
 namespace com.aoyon.AutoConfigureTexture
 {    
     public class SetTextureConfigurator
     {
-        public async static GameObject Apply(AutoConfigureTexture component, Transform parent)
+        public static GameObject Apply(AutoConfigureTexture component)
         {
             if (component == null || (!component.OptimizeTextureFormat && !component.OptimizeMipMap && component.ResolutionReduction == Reduction.None))
                 return null;
@@ -22,14 +22,36 @@ namespace com.aoyon.AutoConfigureTexture
                     return null;
                 }
             }
+            var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+            var r = ApplyImpl(component);
+            stopwatch.Stop();
+            Debug.Log($"ApplyImpl executed in {stopwatch.ElapsedMilliseconds} ms");
+            return r;
         }
-        
-        public async static Task<GameObject> ApplyImpl(AutoConfigureTexture component, Transform parent)
-        {
-            
-            var root = new GameObject("Auto Texture Configurator");
-            root.transform.SetParent(parent);
 
+        private static GameObject ApplyImpl(AutoConfigureTexture component)
+        {
+            var avatarRoot = RuntimeUtil.FindAvatarInParents(component.transform);
+            if (avatarRoot == null) return null;
+
+            var materialinfos = MaterialInfo.Collect(component.gameObject);
+            var textureInfos = TextureInfo.Collect(materialinfos).ToArray();
+
+            var parent = new GameObject("Auto Texture Configurator");
+            parent.transform.SetParent(avatarRoot);
+            var configurators = CrateTextureConfigurators(textureInfos, parent, avatarRoot, component);
+
+            var adjusters = Utils.GetImplementClasses<ITextureAdjuster>();
+            foreach (var adjuster in adjusters)
+            {
+                ProcessAdjuster(adjuster, configurators, component.gameObject, component);
+            }
+
+            return parent;
+        }
+
+        private static IEnumerable<(TextureInfo, TextureConfigurator)> CrateTextureConfigurators(IEnumerable<TextureInfo> infos, GameObject parent, Transform avatarRoot, AutoConfigureTexture component)
+        {
             // 除外するTexture2DのObjectReferenceを取得
             var excludes = component.Exclude
                 .Where(t => t != null)
@@ -37,28 +59,11 @@ namespace com.aoyon.AutoConfigureTexture
                 .ToHashSet();
 
             // 既にTextureConfiguratorを設定しているテクスチャを取得
-            var exists = component.GetComponentsInChildren<TextureConfigurator>()
+            var exists = avatarRoot.GetComponentsInChildren<TextureConfigurator>()
                 .Select(c => c.TargetTexture.GetTexture()) // TTTInternal
                 .Where(t => t != null)
                 .ToHashSet();
 
-            var materialinfos = MaterialInfo.Collect(component.gameObject);
-            var textureInfos = TextureInfo.Collect(materialinfos).ToArray();
-            var configurators = CrateTextureConfigurators(textureInfos, root, excludes, exists);
-
-            var tasks = new List<Task>();
-            var adjusters = Utils.GetImplementClasses<ITextureAdjuster>();
-            foreach (var adjuster in adjusters)
-            {
-                tasks.Add(ProcessAdjuster(adjuster, configurators, component.gameObject, component));
-            }
-            await Task.WhenAll(tasks).ConfigureAwait(false);
-
-            return root;
-        }
-
-        private static IEnumerable<(TextureInfo, TextureConfigurator)> CrateTextureConfigurators(IEnumerable<TextureInfo> infos, GameObject root, HashSet<ObjectReference> excludes, HashSet<Texture> exists)
-        {
             var configurators = new List<(TextureInfo, TextureConfigurator)>();
             foreach (var info in infos)
             {
@@ -77,7 +82,7 @@ namespace com.aoyon.AutoConfigureTexture
 
                 // TextureConfiguratorを生成
                 var go = new GameObject(tex2d.name);
-                go.transform.SetParent(root.transform, false);
+                go.transform.SetParent(parent.transform, false);
                 var textureConfigurator = go.AddComponent<TextureConfigurator>();
 
                 var textureSelector = new TextureSelector();
@@ -96,11 +101,11 @@ namespace com.aoyon.AutoConfigureTexture
             return configurators;
         }
 
-        private async static Task ProcessAdjuster(ITextureAdjuster adjuster, IEnumerable<(TextureInfo, TextureConfigurator)> targets, GameObject root, AutoConfigureTexture config)
+        private static void ProcessAdjuster(ITextureAdjuster adjuster, IEnumerable<(TextureInfo, TextureConfigurator)> targets, GameObject root, AutoConfigureTexture config)
         {
             var infos = targets.Select(x => x.Item1);
 
-            await adjuster.Init(root, infos, config);
+            adjuster.Init(root, infos, config);
 
             foreach (var (info, configurator) in targets)
             {
