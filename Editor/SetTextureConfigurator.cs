@@ -6,9 +6,39 @@ using UnityEditor;
 using net.rs64.TexTransTool;
 using nadena.dev.ndmf;
 using nadena.dev.ndmf.runtime;
+using Object = UnityEngine.Object;
 
 namespace com.aoyon.AutoConfigureTexture
 {    
+
+    public class AutoAdjuterProcessor
+    {
+        private Func<(Object l, Object r), bool> _originEqual;
+
+        public AutoAdjuterProcessor(BuildContext ctx)
+        {
+            
+            var autoAdjustResolutions = ctx.AvatarRootObject.GetComponentsInChildren<AutoAdjustResolution>();
+            var autoAdjustTextureFormats = ctx.AvatarRootObject.GetComponentsInChildren<AutoAdjustTextureFormat>();
+            var AutoremoveMipMap = ctx.AvatarRootObject.GetComponentsInChildren<AutoRemoveMipMap>();
+
+            // 一旦一つのみを想定
+            // Todo: resolve 
+            var autoAdjustResolution = autoAdjustResolutions.FirstOrDefault();
+            var autoAdjustTextureFormat = autoAdjustTextureFormats.FirstOrDefault();
+            var autoRemoveMipMap = AutoremoveMipMap.FirstOrDefault();
+
+            
+
+
+        }
+
+        public static void Excute(GameObject root)
+        {
+
+        }
+    }
+
     public class SetTextureConfigurator
     {
         public static GameObject Apply(AutoConfigureTexture component)
@@ -41,7 +71,7 @@ namespace com.aoyon.AutoConfigureTexture
             parent.transform.SetParent(avatarRoot);
             var configurators = CrateTextureConfigurators(textureInfos, parent, avatarRoot, component);
 
-            var adjusters = Utils.GetImplementClasses<ITextureAdjuster>();
+            var adjusters = Utils.GetInterfaceInstances<ITextureAdjuster>();
             foreach (var adjuster in adjusters)
             {
                 ProcessAdjuster(adjuster, configurators, component.gameObject, component);
@@ -49,7 +79,7 @@ namespace com.aoyon.AutoConfigureTexture
 
             return parent;
         }
-
+ 
         private static IEnumerable<(TextureInfo, TextureConfigurator)> CrateTextureConfigurators(IEnumerable<TextureInfo> infos, GameObject parent, Transform avatarRoot, AutoConfigureTexture component)
         {
             // 除外するTexture2DのObjectReferenceを取得
@@ -57,12 +87,14 @@ namespace com.aoyon.AutoConfigureTexture
                 .Where(t => t != null)
                 .Select(t => ObjectRegistry.GetReference(t))
                 .ToHashSet();
-
+            
+            /*
             // 既にTextureConfiguratorを設定しているテクスチャを取得
             var exists = avatarRoot.GetComponentsInChildren<TextureConfigurator>()
                 .Select(c => c.TargetTexture.GetTexture()) // TTTInternal
                 .Where(t => t != null)
                 .ToHashSet();
+            */
 
             var configurators = new List<(TextureInfo, TextureConfigurator)>();
             foreach (var info in infos)
@@ -75,7 +107,7 @@ namespace com.aoyon.AutoConfigureTexture
                 // TextureConfiguratorは正方形のみ(多分)
                 if (texture.width != texture.height) continue;
                 // 既存の設定がある場合除外
-                if (exists.Contains(tex2d)) continue;
+                //if (exists.Contains(tex2d)) continue;
                 // 除外設定したテクスチャと参照が同一の場合除外
                 var reference = ObjectRegistry.GetReference(tex2d);
                 if (excludes.Any(r => r.Equals(reference))) continue;

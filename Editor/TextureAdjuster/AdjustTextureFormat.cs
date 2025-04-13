@@ -49,7 +49,7 @@ namespace com.aoyon.AutoConfigureTexture
             var currentBPP = MathHelper.FormatToBPP(current);
 
             var channels = info.Properties
-                .Select(propertyInfo => ShaderSupport.GetChannels(propertyInfo.Shader, propertyInfo.PropertyName));
+                .Select(propertyInfo => ShaderSupport.GetChannelCount(propertyInfo.Shader, propertyInfo.PropertyName));
 
             int maxChannel = channels.All(c => c != -1)
                 ? channels.Max()

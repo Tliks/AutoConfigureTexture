@@ -285,7 +285,7 @@ namespace com.aoyon.AutoConfigureTexture
             }
         }
 
-        public static T[] GetImplementClasses<T>() where T : class
+        public static T[] GetInterfaceInstances<T>() where T : class
         {
             return AppDomain.CurrentDomain.GetAssemblies()
                 .SelectMany(assembly => assembly.GetTypes())

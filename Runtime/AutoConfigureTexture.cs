@@ -5,22 +5,6 @@ using VRC.SDKBase;
 
 namespace com.aoyon.AutoConfigureTexture
 {
-    public enum Reduction
-    {
-        None,
-        Low,
-        Normal,
-        High,
-        Ultra
-    }
-
-    public enum FormatMode
-    {
-        LowDownloadSize,
-        Balanced,
-        HighQuality
-    }
-
     [AddComponentMenu("Auto Configure Texture/Auto Configure Texture")]
     [DisallowMultipleComponent]
     public class AutoConfigureTexture: MonoBehaviour, IEditorOnly
@@ -34,6 +18,7 @@ namespace com.aoyon.AutoConfigureTexture
         public bool UseGradient = true;
         public bool IsPCOnly = true;
         public List<Texture2D> Exclude = new();
+
 
         // 削除された機能。バージョンを下げたときの互換性のためにフィールドは残すが、次のマイナーあたりで削除する。
         [Obsolete] public bool OptimizeMaterial = false; 

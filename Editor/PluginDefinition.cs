@@ -14,17 +14,32 @@ namespace com.aoyon.AutoConfigureTexture
 
         protected override void Configure()
         {
-            InPhase(BuildPhase.Generating).
-            Run("Attach TextureConfigurator", ctx =>
+            InPhase(BuildPhase.Resolving)
+            .Run("Resolve References", ctx =>
             {
-                var root = ctx.AvatarRootObject;
-
-                var components = root.GetComponentsInChildren<AutoConfigureTexture>();
-
+                var components = ctx.AvatarRootObject.GetComponentsInChildren<AutoTextureAdjuterComponent>();
                 foreach (var component in components)
                 {
-                    SetTextureConfigurator.Apply(component);
+                    component.ResolveReference();
+                }
+            });
 
+            InPhase(BuildPhase.Transforming)
+            .Run("Auto Adjust Texture", ctx =>
+            {
+                var components = ctx.AvatarRootObject.GetComponentsInChildren<AutoTextureAdjuterComponent>();
+                // process here
+                foreach (var component in components)
+                {
+                    Object.DestroyImmediate(component);
+                }
+            }).Then
+            .Run("Adjust Texture", ctx =>
+            {
+                var components = ctx.AvatarRootObject.GetComponentsInChildren<ManualTextureAdjuterComponent>();
+                // process here
+                foreach (var component in components)
+                {
                     Object.DestroyImmediate(component);
                 }
             });

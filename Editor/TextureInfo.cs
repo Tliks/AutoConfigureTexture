@@ -6,7 +6,7 @@ using System.Linq;
 
 namespace com.aoyon.AutoConfigureTexture
 {
-    public class TextureInfo
+    public struct TextureInfo
     {
         public readonly Texture Texture;
         public readonly List<PropertyInfo> Properties;
@@ -20,32 +20,6 @@ namespace com.aoyon.AutoConfigureTexture
         public readonly bool AlphaIsTransparency;
         public readonly bool MipmapEnabled;
         public readonly bool isReadable;
-
-        private Texture2D _readableTexture;
-        public Texture2D ReadbleTexture2D
-        {
-            get
-            {
-                if (_readableTexture == null)
-                {
-                    _readableTexture = Utils.EnsureReadableTexture2D(Texture as Texture2D);;
-                }
-                return _readableTexture;
-            }
-        }
-
-        private TextureUsage _primaryUsage;
-        public TextureUsage PrimaryUsage
-        {
-            get
-            {
-                if (_primaryUsage == TextureUsage.Unknown)
-                {
-                    _primaryUsage = AssignPrimaryUsage();
-                }
-                return _primaryUsage;
-            }
-        }
 
         public TextureInfo(Texture texture)
         {
@@ -116,13 +90,38 @@ namespace com.aoyon.AutoConfigureTexture
                     }
 
                     var propertyInfo = new PropertyInfo(materialInfo, shader, propertyName, 0);
-                    textureInfo.Properties.Add(propertyInfo);;
-                    textureInfo.AssignPrimaryUsage();
-                    materialInfo.TextureInfos.Add(textureInfo);
+                    textureInfo.Properties.Add(propertyInfo);
+
+                    materialInfo.AddTextureReference(textureInfo);
                 }
             }
 
             return textureInfos.Values;
+        }
+    }
+
+    public class TexrtureSessionData
+    {
+        public readonly TextureInfo Info;
+
+        public TextureUsage PrimaryUsage;
+        private Texture2D _readableTexture;
+        public Texture2D ReadbleTexture2D
+        {
+            get
+            {
+                if (_readableTexture == null)
+                {
+                    _readableTexture = Utils.EnsureReadableTexture2D(Info.Texture as Texture2D);;
+                }
+                return _readableTexture;
+            }
+        }
+
+        public TexrtureSessionData(TextureInfo info)
+        {
+            Info = info;
+            PrimaryUsage = AssignPrimaryUsage();
         }
 
         private TextureUsage AssignPrimaryUsage()
@@ -134,7 +133,7 @@ namespace com.aoyon.AutoConfigureTexture
             //           _MainTexのみusageとして返るが、それ以外で不明プロパティのみの場合は何もしない
             // パターン3: lilToonとそれ以外が混じっている場合
             //           lilToonの情報のみで処理されるためlilToon以外で重要な使用プロパティだった場合顕劣化が想定されるが、エッジケースなのでここでは想定しない
-            var usages = Properties
+            var usages = Info.Properties
                 .Select(info => ShaderSupport.GetTextureUsage(info.Shader, info.PropertyName))
                 .OfType<TextureUsage>();
                 
@@ -200,17 +199,22 @@ namespace com.aoyon.AutoConfigureTexture
             Material = material;
         }
 
-        private void AddReference(Renderer renderer, int index)
+        public void AddReferenced(Renderer renderer, int index)
         {
             Renderers.Add(renderer);
             MaterialIndices.Add(index);
         }
 
-        public static IEnumerable<MaterialInfo> Collect(GameObject root)
+        public void AddTextureReference(TextureInfo textureInfo)
+        {
+            TextureInfos.Add(textureInfo);
+        }
+
+        public static IEnumerable<MaterialInfo> Collect(IEnumerable<Renderer> renderers)
         {
             var materialInfos = new Dictionary<Material, MaterialInfo>();
 
-            foreach (var renderer in root.GetComponentsInChildren<Renderer>(true))
+            foreach (var renderer in renderers.ToHashSet())
             {
                 var materials = renderer.sharedMaterials;
                 for (int index = 0; index < materials.Length; index++)
@@ -218,17 +222,23 @@ namespace com.aoyon.AutoConfigureTexture
                     var material = materials[index];
                     if (material == null) continue;
 
-                    if (!materialInfos.TryGetValue(material, out var materialInfo))
-                    {
-                        materialInfo = new MaterialInfo(material);
-                        materialInfos[material] = materialInfo;
-                    }
-
-                    materialInfo.AddReference(renderer, index);
+                    materialInfos.GetOrAdd(material, m => new(m)).AddReferenced(renderer, index);
                 }
             }
 
             return materialInfos.Values;
+        }
+    }
+
+    internal static class DictionaryExtensions
+    {
+        public static TValue GetOrAdd<TKey, TValue>(this Dictionary<TKey, TValue> dictionary, TKey key, Func<TKey, TValue> factory)
+        {
+            if (dictionary.TryGetValue(key, out TValue value))
+                return value;
+            value = factory(key);
+            dictionary.Add(key, value);
+            return value;
         }
     }
 
@@ -259,6 +269,7 @@ namespace com.aoyon.AutoConfigureTexture
         BA,
         RGB,
         RGA,
+        GBA,
         RGBA,
     }
 }

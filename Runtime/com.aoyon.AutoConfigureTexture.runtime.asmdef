@@ -1,7 +1,10 @@
 {
     "name": "com.aoyon.AutoConfigureTexture.runtime",
     "rootNamespace": "",
-    "references": [],
+    "references": [
+        "nadena.dev.ndmf.runtime",
+        "nadena.dev.modular-avatar.core"
+    ],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,

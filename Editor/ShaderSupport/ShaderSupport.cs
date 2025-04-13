@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using UnityEngine;
 
@@ -9,19 +10,19 @@ namespace com.aoyon.AutoConfigureTexture
 
         static ShaderSupport()
         {
-            _shaderSupports = Utils.GetImplementClasses<IShaderSupport>();
+            _shaderSupports = Utils.GetInterfaceInstances<IShaderSupport>();
         }
 
         private static IShaderSupport GetShaderSupport(Shader shader)
         {
-            if (shader == null) return null;
+            if (shader == null) throw new InvalidOperationException();
             return _shaderSupports.Where(s => s.IsTarget(shader)).First();
         }
 
         private static IShaderSupport GetShaderSupport(Material material)
         {
             var shader = material?.shader;
-            if (shader == null) return null;
+            if (shader == null) throw new InvalidOperationException();
             return GetShaderSupport(shader);
         }
 
@@ -52,7 +53,7 @@ namespace com.aoyon.AutoConfigureTexture
             return shaderSupport.IsVertexShader(shader, property);
         }
 
-        public static int GetChannels(Shader shader, string property)
+        public static int GetChannelCount(Shader shader, string property)
         {
             var textureChannel = GetTextureChannel(shader, property);
             switch (textureChannel)
