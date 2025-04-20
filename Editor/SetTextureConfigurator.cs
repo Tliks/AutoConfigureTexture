@@ -60,7 +60,7 @@ namespace com.aoyon.AutoConfigureTexture
 
             // 既にTextureConfiguratorを設定しているテクスチャを取得
             var exists = avatarRoot.GetComponentsInChildren<TextureConfigurator>()
-                .Select(c => c.TargetTexture.GetTexture()) // TTTInternal
+                .Select(c => c.TargetTexture.SelectTexture)
                 .Where(t => t != null)
                 .ToHashSet();
 
@@ -85,16 +85,7 @@ namespace com.aoyon.AutoConfigureTexture
                 go.transform.SetParent(parent.transform, false);
                 var textureConfigurator = go.AddComponent<TextureConfigurator>();
 
-                var textureSelector = new TextureSelector();
-                textureSelector.Mode = TextureSelector.SelectMode.Relative;
-                // 代表のプロパティ, Renderer, Material
-                var property = properties.First();
-                var materialInfo = property.MaterialInfo;
-                textureSelector.RendererAsPath = materialInfo.Renderers.First();
-                textureSelector.SlotAsPath = materialInfo.MaterialIndices.First();
-                var propertyName = new net.rs64.TexTransTool.PropertyName(property.PropertyName);
-                textureSelector.PropertyNameAsPath = propertyName;
-                textureConfigurator.TargetTexture = textureSelector;
+                textureConfigurator.TargetTexture = new TextureSelector() { SelectTexture = tex2d };
 
                 configurators.Add((info, textureConfigurator));
             }
