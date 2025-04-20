@@ -136,7 +136,7 @@ namespace com.aoyon.AutoConfigureTexture
             //           lilToonの情報のみで処理されるためlilToon以外で重要な使用プロパティだった場合顕劣化が想定されるが、エッジケースなのでここでは想定しない
             var usages = Properties
                 .Select(info => ShaderSupport.GetTextureUsage(info.Shader, info.PropertyName))
-                .OfType<TextureUsage>();
+                .Where(usage => usage != TextureUsage.Unknown);
                 
             // 不明プロパティのみの場合は何もしない
             if (!usages.Any())
