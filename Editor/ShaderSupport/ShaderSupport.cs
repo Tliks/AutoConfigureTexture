@@ -15,7 +15,13 @@ namespace com.aoyon.AutoConfigureTexture
         private static IShaderSupport GetShaderSupport(Shader shader)
         {
             if (shader == null) return null;
-            return _shaderSupports.Where(s => s.IsTarget(shader)).First();
+            var supports = _shaderSupports.Where(s => s.IsTarget(shader));
+            if (supports == null || supports.Count() == 0) return null;
+            if (supports.Count() > 1)
+            {
+                Debug.LogWarning($"ShaderSupport: {shader.name} is supported by multiple shader supports.");
+            }
+            return supports.First();
         }
 
         private static IShaderSupport GetShaderSupport(Material material)
