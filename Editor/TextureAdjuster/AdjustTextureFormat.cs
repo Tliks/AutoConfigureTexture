@@ -49,15 +49,15 @@ namespace com.aoyon.AutoConfigureTexture
             var currentBPP = MathHelper.FormatToBPP(current);
 
             var channels = info.Properties
-                .Select(propertyInfo => ShaderSupport.GetChannels(propertyInfo.Shader, propertyInfo.PropertyName));
+                .Select(propertyInfo => ShaderSupport.GetTextureChannel(propertyInfo.Shader, propertyInfo.PropertyName));
 
-            int maxChannel = channels.All(c => c != -1)
-                ? channels.Max()
-                : 4; // 不明な使用用途が一つでもあった場合は4チャンネルとして処理
+            var channel = channels.Any(c => c.HasFlag(TextureChannel.Unknown))
+                ? TextureChannel.RGBA // 不明な使用用途が一つでもあった場合はRGBAとして処理
+                : channels.Aggregate((a, b) => a | b);
         
-            switch(maxChannel)
+            switch (channel)
             {
-                case 4:
+                case TextureChannel.RGBA:
                     // ノーマルマップ(4チャンネル)にBC5が入っている場合への対症療法
                     if (current == TextureFormat.BC7 || current == TextureFormat.BC5)
                     {
@@ -79,10 +79,13 @@ namespace com.aoyon.AutoConfigureTexture
                     }
                     else
                     {
-                        goto case 3;
+                        goto case TextureChannel.RGB;
                     }
                     break;
-                case 3:
+                case TextureChannel.RGB:
+                case TextureChannel.RGA:
+                case TextureChannel.RBA:
+                case TextureChannel.GBA:
                     if (current == TextureFormat.BC7)
                     {
                         format = current;
@@ -108,7 +111,12 @@ namespace com.aoyon.AutoConfigureTexture
                         }
                     }
                     break;
-                case 2:
+                case TextureChannel.RG:
+                case TextureChannel.RB:
+                case TextureChannel.RA:
+                case TextureChannel.GB:
+                case TextureChannel.GA:
+                case TextureChannel.BA:
                     if (current == TextureFormat.BC7 || current == TextureFormat.BC5)
                     {
                         format = current;
@@ -125,8 +133,15 @@ namespace com.aoyon.AutoConfigureTexture
                         }
                     }
                     break;
-                case 1:
+                case TextureChannel.R:
                     format = TextureFormat.BC4;
+                    break;
+                // TextureConfiguratorはBC4でRのみにするしそもそも訳分からない情報が渡ってきてるので現在のフォーマットを使用する
+                case TextureChannel.G:
+                case TextureChannel.B:
+                case TextureChannel.A:
+                    format = current;
+                    Debug.LogWarning($"Invalid info: {tex.name} {current} format with {channel} channel");
                     break;
                 default:
                     break;

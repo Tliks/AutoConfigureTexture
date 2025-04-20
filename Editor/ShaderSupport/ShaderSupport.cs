@@ -51,34 +51,5 @@ namespace com.aoyon.AutoConfigureTexture
                 return true;
             return shaderSupport.IsVertexShader(shader, property);
         }
-
-        public static int GetChannels(Shader shader, string property)
-        {
-            var textureChannel = GetTextureChannel(shader, property);
-            switch (textureChannel)
-            {
-                case TextureChannel.Unknown: 
-                    return -1;
-                case TextureChannel.R:
-                case TextureChannel.G:
-                case TextureChannel.B:
-                case TextureChannel.A: 
-                    return 1;
-                case TextureChannel.RG:
-                case TextureChannel.RB:
-                case TextureChannel.RA:
-                case TextureChannel.GB:
-                case TextureChannel.GA:
-                case TextureChannel.BA: 
-                    return 2;
-                case TextureChannel.RGB:
-                case TextureChannel.RGA: 
-                    return 3;
-                case TextureChannel.RGBA: 
-                    return 4;
-                default: 
-                    return -1;
-            }
-        }
     }
 }

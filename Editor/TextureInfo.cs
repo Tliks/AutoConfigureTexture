@@ -244,21 +244,24 @@ namespace com.aoyon.AutoConfigureTexture
         Others,
     }
 
+    [Flags]
     public enum TextureChannel
     {
-        Unknown,
-        R,
-        G,
-        B,
-        A,
-        RG,
-        RB,
-        RA,
-        GB,
-        GA,
-        BA,
-        RGB,
-        RGA,
-        RGBA,
+        Unknown = 1 << 4,
+        R = 1 << 0,
+        G = 1 << 1,
+        B = 1 << 2,
+        A = 1 << 3,
+        RG = R | G,
+        RB = R | B,
+        RA = R | A,
+        GB = G | B,
+        GA = G | A,
+        BA = B | A,
+        RGB = R | G | B,
+        RGA = R | G | A,
+        RBA = R | B | A,
+        GBA = G | B | A, 
+        RGBA = R | G | B | A,
     }
 }
