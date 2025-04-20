@@ -11,8 +11,6 @@ namespace com.aoyon.AutoConfigureTexture
         private SerializedProperty MaintainCrunch;
         private SerializedProperty OptimizeMipMap;
         private SerializedProperty ResolutionReduction;
-        private SerializedProperty UsePosition;
-        private SerializedProperty UseGradient;
         private SerializedProperty IsPCOnly;
         private SerializedProperty Exclude;
 
@@ -23,8 +21,6 @@ namespace com.aoyon.AutoConfigureTexture
             MaintainCrunch = serializedObject.FindProperty(nameof(AutoConfigureTexture.MaintainCrunch));
             OptimizeMipMap = serializedObject.FindProperty(nameof(AutoConfigureTexture.OptimizeMipMap));
             ResolutionReduction = serializedObject.FindProperty(nameof(AutoConfigureTexture.ResolutionReduction));
-            UsePosition = serializedObject.FindProperty(nameof(AutoConfigureTexture.UsePosition));
-            UseGradient = serializedObject.FindProperty(nameof(AutoConfigureTexture.UseGradient));
             IsPCOnly = serializedObject.FindProperty(nameof(AutoConfigureTexture.IsPCOnly));
             Exclude = serializedObject.FindProperty(nameof(AutoConfigureTexture.Exclude));
         }
@@ -44,14 +40,6 @@ namespace com.aoyon.AutoConfigureTexture
             }
             PropertyField(OptimizeMipMap);
             PropertyField(ResolutionReduction);
-            if (ResolutionReduction.enumValueIndex != (int)Reduction.None)
-            {
-                using (new EditorGUI.IndentLevelScope())
-                {
-                    PropertyField(UsePosition);
-                    PropertyField(UseGradient);
-                }
-            }
             PropertyField(IsPCOnly);
             PropertyField(Exclude);
             serializedObject.ApplyModifiedProperties();
