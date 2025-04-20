@@ -51,10 +51,10 @@ namespace com.aoyon.AutoConfigureTexture
         }
 
         [MenuItem("CONTEXT/AutoConfigureTexture/Attach TextureConfigurator")]
-        private static void SetTextureConfigurator(MenuCommand command)
+        private static void AttachTextureConfigurators(MenuCommand command)
         {
             var component = command.context as AutoConfigureTexture;
-            var go = AttachConfigurators.Apply(component, component.transform);
+            var go = SetTextureConfigurator.Apply(component);
             Undo.RegisterCreatedObjectUndo(go, "Auto Configure Texture Setup");
             Selection.activeGameObject = go;
             EditorGUIUtility.PingObject(go);

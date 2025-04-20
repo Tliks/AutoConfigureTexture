@@ -1,67 +1,12 @@
-using System;
 using System.Collections.Generic;
-using System.Linq;
+using UnityEditor;
 using UnityEngine;
 
 namespace com.aoyon.AutoConfigureTexture
 {
-    public enum TextureUsage
+
+    internal class lilToonSupport : IShaderSupport
     {
-        MainTex,
-        NormalMap,
-        NormalMapSub, // メインのNormalMapと区別
-        AOMap,
-        MatCap,
-        Emission,
-        Others,
-        Unknown
-    }
-
-    public class PropertyDictionary
-    {
-        enum TextureChannel
-        {
-            None,
-            R,
-            G,
-            B,
-            A,
-            RG,
-            RB,
-            RA,
-            GB,
-            GA,
-            BA,
-            RGB,
-            RGA,
-            RGBA,
-        }
-
-        struct PropertyData
-        {
-            public TextureChannel OpaqueChannel;
-            public TextureChannel TransparentChannel;
-            public TextureUsage TextureUsage;
-            public bool IsVertex;
-
-            internal PropertyData(TextureChannel baseChannel, TextureUsage textureUsage = TextureUsage.Others, bool isVertex = false)
-            {
-                OpaqueChannel = baseChannel;
-                TransparentChannel = baseChannel;
-                TextureUsage = textureUsage;
-                IsVertex = isVertex;
-            }
-
-            internal PropertyData(TextureChannel opaqueChannel, TextureChannel transparentChannel, TextureUsage usage = TextureUsage.Others, bool isVertex = false)
-            {
-                OpaqueChannel = opaqueChannel;
-                TransparentChannel = transparentChannel;
-                TextureUsage = usage;
-                IsVertex = isVertex;
-            }
-
-        }
-
         static Dictionary<string, PropertyData> lilToonProperty = new Dictionary<string, PropertyData>()
         {
             // https://lilxyzw.github.io/lilToon/ja_JP/color/maincolor.html メインカラー
@@ -137,8 +82,7 @@ namespace com.aoyon.AutoConfigureTexture
             { "_RimColorTex",            new PropertyData(TextureChannel.RGBA) }, // 多分RGBA
 
             // https://lilxyzw.github.io/lilToon/ja_JP/reflections/glitter.html ラメ
-            { "_GlitterColorTex",        new PropertyData(TextureChannel.None) }, // HDR
-            { "_GlitterColorTex_UVMode", new PropertyData(TextureChannel.None) }, // HDR
+            { "_GlitterColorTex",        new PropertyData(TextureChannel.Unknown) }, // HDR
             { "_GlitterShapeTex",        new PropertyData(TextureChannel.RGBA) }, // RGBA
 
             // https://lilxyzw.github.io/lilToon/ja_JP/advanced/outline.html 輪郭線
@@ -150,7 +94,7 @@ namespace com.aoyon.AutoConfigureTexture
             { "_ParallaxMap",            new PropertyData(TextureChannel.R) }, // R
 
             // https://lilxyzw.github.io/lilToon/ja_JP/advanced/audiolink.html Audiolink
-            { "_AudioLinkMask",          new PropertyData(TextureChannel.None) }, // 不明
+            { "_AudioLinkMask",          new PropertyData(TextureChannel.Unknown) }, // 不明
             //{ "_AudioLinkMask_ScrollRotate",new PropertyData(TextureChannel.None) }, // 不明
             //{ "_AudioLinkMask_UVMode",   new PropertyData(TextureChannel.None) }, // 不明
 
@@ -167,75 +111,33 @@ namespace com.aoyon.AutoConfigureTexture
             //{ "_TriMask",                new PropertyData(TextureChannel.None) }  // 不明
         };
 
-        private static PropertyData? GetPropertyData(Shader shader, string property)
+        public bool IsTarget(Shader shader)
         {
-            Dictionary<string, PropertyData> shaderDictionary = null;
-
-            if (CheckShader.IslilToon(shader))
-                shaderDictionary = lilToonProperty;
-
-            if (shaderDictionary != null && shaderDictionary.TryGetValue(property, out var channelValues))
-            {
-                return channelValues;
-            }
-            else
-            {
-                return null;
-            }
+            if(shader == null) return false;
+            if(shader.name.Contains("lilToon") || shader.name.Contains("lts_pass")) return true;
+            string shaderPath = AssetDatabase.GetAssetPath(shader);
+            return !string.IsNullOrEmpty(shaderPath) && shaderPath.Contains(".lilcontainer");
         }
 
-        public static int GetChannels(Shader shader, string property)
+        public TextureChannel GetTextureChannel(Shader shader, string property)
         {
-            var propertydata = GetPropertyData(shader, property);
-            if (propertydata is PropertyData data)
-            {
-                TextureChannel channel = Utils.IsOpaqueShader(shader) 
-                    ? data.OpaqueChannel
-                    : data.TransparentChannel;
-
-                switch (channel)
-                {
-                    case TextureChannel.None: 
-                        return -1;
-                    case TextureChannel.R:
-                    case TextureChannel.G:
-                    case TextureChannel.B:
-                    case TextureChannel.A: 
-                        return 1;
-                    case TextureChannel.RG:
-                    case TextureChannel.RB:
-                    case TextureChannel.RA:
-                    case TextureChannel.GB:
-                    case TextureChannel.GA:
-                    case TextureChannel.BA: 
-                        return 2;
-                    case TextureChannel.RGB:
-                    case TextureChannel.RGA: 
-                        return 3;
-                    case TextureChannel.RGBA: 
-                        return 4;
-                    default: 
-                        return -1;
-                }
-            }
-            else
-            {
-                return -1;
-            }
+            if (!lilToonProperty.TryGetValue(property, out var data)) return TextureChannel.Unknown;
+            return Utils.IsOpaqueShader(shader) 
+                ? data.OpaqueChannel
+                : data.TransparentChannel;
         }
 
-        public static TextureUsage? GetTextureUsage(Shader shader, string property)
+        public TextureUsage GetTextureUsage(Shader shader, string property)
         {
-            // _MainTexはUnityの予約語らしいので辞書を使わず返す
-            if (property == "_MainTex") 
-                return TextureUsage.MainTex; 
-            var data = GetPropertyData(shader, property);
-            return data?.TextureUsage;
+            if (!lilToonProperty.TryGetValue(property, out var data)) return TextureUsage.Unknown;
+            return data.TextureUsage;
         }
 
-        public static bool? IsVertexShader(Shader shader, string property)
+        public bool IsVertexShader(Shader shader, string property)
         {
-            return GetPropertyData(shader, property)?.IsVertex;
+            if (!lilToonProperty.TryGetValue(property, out var data)) return true;
+            return data.IsVertex;
         }
+
     }
 }
