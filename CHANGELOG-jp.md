@@ -15,25 +15,27 @@
 
 ## [0.5.0] - 2025-4-20
 ### Added
-- Added Japanese changelog.
+- 日本語の変更履歴を追加。
 
 ### Changed
-- Exclude materials operated on by TTT AtlasTexture from the execution target.
-    - Textures that can be modified by AtlasTexture have been excluded as they should be manipulated either inside the AtlasTexture or via further processing.
-- Changed the generation of TTT TextureConfigurator to absolute path mode instead of relative path.
-    - Previously, relative path mode was used to retain references to textures that might be manipulated by TTT AtlasTexture.
-    - However, as per the above change, materials operated on by TTT AtlasTexture have been excluded from the execution target, so this is no longer necessary.
-    - This also corresponds to the removal of relative path mode in TexTransTool v0.10.0-beta.5.
-- Significantly refactored the entire code in consideration of future feature additions.
-    - There is no impact on execution results.
-- Added `< v0.11.0` to the compatible TTT version specification.
-- Improved execution speed when processing textures that may contain alpha channels.
+- TTT AtlasTextureで操作されるマテリアルを実行対象から除外するように変更。
+    - AtlasTexture で変更され得るテクスチャは、AtlasTexture 内部またはそれ以降の処理で操作されるべきであるため、対象から除外されました。
+- TTT TextureConfigurator の生成を、相対パスではなく絶対パスモードで行うように変更。
+    - これまで、TTT AtlasTexture で操作される可能性のあるテクスチャへの参照を保持するため、相対パスモードを使用していました。
+    - しかし、上記の変更の通りTTT AtlasTextureで操作されるマテリアルを実行対象から除外するように変更されたため不要となりました。
+    - これは同時に、TexTransTool v0.10.0-beta.5 における相対パスモードの削除に対応するものです。
+- 今後の機能追加を考慮し、コード全体を大幅にリファクタリング。
+    - 実行結果への影響はありません。
+- 互換性のある TTT のバージョン指定に、`< v0.11.0` を追加。
+- アルファチャンネルを含む可能性のあるテクスチャを処理する際の実行速度を改善。
 
 ### Fixed
-- Fixed a potential error that could occur when there are shaders other than lilToon or unregistered properties.
-- Fixed an issue where the color space was not correctly reproduced when converting gamma space textures to BC4.
-    - This is a temporary workaround that only converts linear space textures to BC4.
+- lilToon 以外のシェーダーや、登録されていないプロパティが存在する場合に発生する可能性のあるエラーを修正。
+- ガンマ空間のテクスチャをBC4に変換する際に、色空間が正しく再現されない問題を修正。
+    - これは、リニア空間のテクスチャのみをBC4に変換する一時的な対応策です。
 
+    
+## 以下のバージョンには日本語の変更履歴はありません。
 
 ## [0.4.1] - 2025-2-07
 ### Changed
