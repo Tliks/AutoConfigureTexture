@@ -6,6 +6,7 @@ using UnityEditor;
 using net.rs64.TexTransTool;
 using nadena.dev.ndmf;
 using nadena.dev.ndmf.runtime;
+using net.rs64.TexTransTool.TextureAtlas;
 
 namespace com.aoyon.AutoConfigureTexture
 {    
@@ -34,7 +35,21 @@ namespace com.aoyon.AutoConfigureTexture
             var avatarRoot = RuntimeUtil.FindAvatarInParents(component.transform);
             if (avatarRoot == null) return null;
 
-            var materialinfos = MaterialInfo.Collect(component.gameObject);
+            var atlasTextures = avatarRoot.GetComponentsInChildren<AtlasTexture>(false);
+#if ACT_HAS_TTT_0_10_0_OR_NEWER
+            var ifnoreMaterials = atlasTextures.SelectMany(at => at.AtlasTargetMaterials)
+                .Where(m => m != null)
+                .Select(m => ObjectRegistry.GetReference(m))
+                .ToHashSet();
+#else
+            var ifnoreMaterials = atlasTextures.SelectMany(at => at.SelectMatList).Select(s => s.Material)
+                .Where(m => m != null)
+                .Select(m => ObjectRegistry.GetReference(m))
+                .ToHashSet();
+#endif
+
+            var materialinfos = MaterialInfo.Collect(component.gameObject)
+                .Where(mi => !ifnoreMaterials.Contains(ObjectRegistry.GetReference(mi.Material)));
             var textureInfos = TextureInfo.Collect(materialinfos).ToArray();
 
             var parent = new GameObject("Auto Texture Configurator");

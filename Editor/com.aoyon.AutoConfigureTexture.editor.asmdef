@@ -29,9 +29,14 @@
             "define": "ACT_MA"
         },
         {
-        "name": "com.vrchat.base",
-        "expression": "",
-        "define": "HAS_HARMONY"
+            "name": "com.vrchat.base",
+            "expression": "",
+            "define": "HAS_HARMONY"
+        },
+        {
+            "name": "net.rs64.tex-trans-tool",
+            "expression": "0.10.0-beta.1",
+            "define": "ACT_HAS_TTT_0_10_0_OR_NEWER"
         }
     ],
     
