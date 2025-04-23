@@ -135,13 +135,18 @@ namespace com.aoyon.AutoConfigureTexture
                     break;
                 case TextureChannel.R:
                     // Unityはガンマ空間のテクスチャをBC4で解釈しない
-                    // よってワークアラウンドとしてリニア空間のテクスチャに限りBC4にする
-                    if (!info.sRGBTexture)
+                    // よってリニア空間のテクスチャに限りBC4にする
+                    // リニア変換するほどではない
+                    if (info.sRGBTexture)
+                    {
+                        format = TextureFormat.DXT1;
+                    }
+                    else
                     {
                         format = TextureFormat.BC4;
                     }
                     break;
-                // TextureConfiguratorはBC4でRのみにするしそもそも訳分からない情報が渡ってきてるので現在のフォーマットを使用する
+                // TextureConfiguratorはBC4でRのみにするしそもそも訳分からない情報が渡ってきてるので安全寄りで現在のフォーマットを使用する
                 case TextureChannel.G:
                 case TextureChannel.B:
                 case TextureChannel.A:
