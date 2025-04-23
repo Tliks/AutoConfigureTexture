@@ -64,7 +64,7 @@ namespace com.aoyon.AutoConfigureTexture
             int width = texture.width;
             var resolution = width;
             
-            data = new AdjustData<object>(resolution);
+            data = null;
 
             var reduction = _config.ResolutionReduction;
             if (reduction == Reduction.None)
@@ -152,6 +152,7 @@ namespace com.aoyon.AutoConfigureTexture
                 }
             }
 
+            data = new(resolution);
             return resolution != width;
 
             // 解像度が指定された最小値を下回らないようにしつつ、指定された除数で解像度を減少させます。

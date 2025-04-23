@@ -24,14 +24,7 @@ namespace com.aoyon.AutoConfigureTexture
         {
             var shouldRemove = info.Properties.All(p => ShaderSupport.IsVertexShader(p.Shader, p.PropertyName));
             data = new AdjustData<object>(shouldRemove);
-            if (shouldRemove)
-            {
-                return true;
-            }
-            else
-            {
-                return false;
-            }
+            return shouldRemove;
         }
         public void SetDefaultValue(TextureConfigurator configurator, TextureInfo info)
         {
