@@ -60,7 +60,15 @@ namespace com.aoyon.AutoConfigureTexture
                     if (GraphicsFormatUtility.HasAlphaChannel(Format))
                     {
                         Profiler.BeginSample("HasAlphaImpl");
-                        _hasAlpha = Utils.ContainsAlpha(Texture);
+                        try
+                        {
+                            _hasAlpha = Utils.HasAlphaWithBinarization(Texture);
+                        }
+                        catch (Exception e)
+                        {
+                            Debug.LogError($"Failed to check alpha channel: {e.Message}");
+                            _hasAlpha = true;
+                        }
                         Profiler.EndSample();
                     }
                     else

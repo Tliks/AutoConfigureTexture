@@ -18,11 +18,26 @@ namespace com.aoyon.AutoConfigureTexture
         [InitializeOnLoadMethod]
         static void Init()
         {
-            s_alphaBinarizationMaterial = new Material(Shader.Find("Hidden/AutoConfigureTexture/AlphaBinarization"));
+            InitializeAlphaBinarizationMaterial();
         }
 
-        public static bool ContainsAlpha(Texture texture)
+        private static void InitializeAlphaBinarizationMaterial()
         {
+            if (s_alphaBinarizationMaterial == null)
+            {
+                var alphaBinarization = Shader.Find("Hidden/AutoConfigureTexture/AlphaBinarization");
+                if (alphaBinarization == null)
+                {
+                    Debug.LogError("Shader not found: Hidden/AutoConfigureTexture/AlphaBinarization");
+                    return;
+                }
+                s_alphaBinarizationMaterial = new Material(alphaBinarization);
+            }
+        }
+
+        public static bool HasAlphaWithBinarization(Texture texture)
+        {
+            InitializeAlphaBinarizationMaterial();
             var temp = RenderTexture.GetTemporary(32, 32, 0, RenderTextureFormat.R8);
             var active = RenderTexture.active;
             try
@@ -44,10 +59,6 @@ namespace com.aoyon.AutoConfigureTexture
                     }
                 }
 
-                return false;
-            }
-            catch
-            {
                 return false;
             }
             finally
