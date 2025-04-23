@@ -115,6 +115,7 @@ namespace com.aoyon.AutoConfigureTexture
 
         public static IEnumerable<TextureInfo> Collect(IEnumerable<MaterialInfo> materialInfos)
         {
+            Profiler.BeginSample("TextureInfo.CollectImpl");
             var textureInfos = new Dictionary<Texture, TextureInfo>();
 
             foreach (var materialInfo in materialInfos)
@@ -122,33 +123,51 @@ namespace com.aoyon.AutoConfigureTexture
                 var material = materialInfo.Material;
                 var shader = material.shader;
 
-                int propertyCount = ShaderUtil.GetPropertyCount(shader);
+                int propertyCount = shader.GetPropertyCount();
                 for (int i = 0; i < propertyCount; i++)
                 {
-                    if (ShaderUtil.GetPropertyType(shader, i) != ShaderUtil.ShaderPropertyType.TexEnv)
+                    Profiler.BeginSample("ShaderUtil.GetPropertyType");
+                    if (shader.GetPropertyType(i) != UnityEngine.Rendering.ShaderPropertyType.Texture)
+                    {
+                        Profiler.EndSample();
                         continue;
+                    }
+                    Profiler.EndSample();
 
-                    string propertyName = ShaderUtil.GetPropertyName(shader, i);
-                    Texture texture = material.GetTexture(propertyName);
+                    Profiler.BeginSample("ShaderUtil.GetTexture");
+                    var NameID = shader.GetPropertyNameId(i);
+                    Texture texture = material.GetTexture(NameID);
                     if (texture == null)
+                    {
+                        Profiler.EndSample();
                         continue;
+                    }
+                    Profiler.EndSample();
 
+                    Profiler.BeginSample("TextureInfo ctor");
                     if (!textureInfos.TryGetValue(texture, out var textureInfo))
                     {
                         textureInfo = new TextureInfo(texture);
                         textureInfos[texture] = textureInfo;
                     }
+                    Profiler.EndSample();
 
+                    Profiler.BeginSample("PropertyInfo ctor");
+                    var propertyName = shader.GetPropertyName(i);
                     var propertyInfo = new PropertyInfo(materialInfo, shader, propertyName, 0);
                     textureInfo.Properties.Add(propertyInfo);
                     materialInfo.TextureInfos.Add(textureInfo);
+                    Profiler.EndSample();
                 }
             }
 
+            Profiler.BeginSample("TextureInfo.AssignPrimaryUsage");
             foreach (var textureInfo in textureInfos.Values)
             {
                 textureInfo.AssignPrimaryUsage();
             }
+            Profiler.EndSample();
+            Profiler.EndSample();
 
             return textureInfos.Values;
         }
