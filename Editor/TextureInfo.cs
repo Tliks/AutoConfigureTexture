@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
 using System.Linq;
+using UnityEngine.Experimental.Rendering;
+using UnityEngine.Profiling;
 
 namespace com.aoyon.AutoConfigureTexture
 {
@@ -44,6 +46,30 @@ namespace com.aoyon.AutoConfigureTexture
                     _primaryUsage = AssignPrimaryUsage();
                 }
                 return _primaryUsage;
+            }
+        }
+
+        private bool? _hasAlpha = null;
+        public bool HasAlpha
+        {
+            get
+            {
+                Profiler.BeginSample("HasAlpha");
+                if (_hasAlpha == null)
+                {
+                    if (GraphicsFormatUtility.HasAlphaChannel(Format))
+                    {
+                        Profiler.BeginSample("HasAlphaImpl");
+                        _hasAlpha = Utils.ContainsAlpha(Texture);
+                        Profiler.EndSample();
+                    }
+                    else
+                    {
+                        _hasAlpha = false;
+                    }
+                }
+                Profiler.EndSample();
+                return _hasAlpha.Value;
             }
         }
 
@@ -99,12 +125,10 @@ namespace com.aoyon.AutoConfigureTexture
                 int propertyCount = ShaderUtil.GetPropertyCount(shader);
                 for (int i = 0; i < propertyCount; i++)
                 {
-                    ShaderUtil.ShaderPropertyType propertyType = ShaderUtil.GetPropertyType(shader, i);
-                    if (propertyType != ShaderUtil.ShaderPropertyType.TexEnv)
+                    if (ShaderUtil.GetPropertyType(shader, i) != ShaderUtil.ShaderPropertyType.TexEnv)
                         continue;
-                        
-                    string propertyName = ShaderUtil.GetPropertyName(shader, i);
 
+                    string propertyName = ShaderUtil.GetPropertyName(shader, i);
                     Texture texture = material.GetTexture(propertyName);
                     if (texture == null)
                         continue;
@@ -116,15 +140,29 @@ namespace com.aoyon.AutoConfigureTexture
                     }
 
                     var propertyInfo = new PropertyInfo(materialInfo, shader, propertyName, 0);
-                    textureInfo.Properties.Add(propertyInfo);;
-                    textureInfo.AssignPrimaryUsage();
+                    textureInfo.Properties.Add(propertyInfo);
                     materialInfo.TextureInfos.Add(textureInfo);
                 }
+            }
+
+            foreach (var textureInfo in textureInfos.Values)
+            {
+                textureInfo.AssignPrimaryUsage();
             }
 
             return textureInfos.Values;
         }
 
+        private static readonly TextureUsage[] s_usages = 
+        {
+            TextureUsage.MainTex,
+            TextureUsage.NormalMap,
+            TextureUsage.NormalMapSub,
+            TextureUsage.AOMap,
+            TextureUsage.MatCap,
+            TextureUsage.Emission,
+            TextureUsage.Others,
+        };
         private TextureUsage AssignPrimaryUsage()
         {
             // 不明な使用用途は無視し既知の情報のみで判断
@@ -152,15 +190,7 @@ namespace com.aoyon.AutoConfigureTexture
             // MainTex > NormalMap > Emission > AOMap > NormalMapSub > Others > MatCap
             TextureUsage GetPrimaryUsage(IEnumerable<TextureUsage> usages)
             {
-                foreach (var usage in new[] { 
-                    TextureUsage.MainTex, 
-                    TextureUsage.NormalMap, 
-                    TextureUsage.Emission, 
-                    TextureUsage.AOMap, 
-                    TextureUsage.NormalMapSub, 
-                    TextureUsage.Others, 
-                    TextureUsage.MatCap 
-                })
+                foreach (var usage in s_usages)
                 {
                     if (usages.Contains(usage))
                     {

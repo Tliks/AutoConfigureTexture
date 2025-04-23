@@ -1,15 +1,20 @@
 using System.Linq;
+using UnityEditor;
 using UnityEngine;
 
 namespace com.aoyon.AutoConfigureTexture
 {
     internal static class ShaderSupport
     {
-        private static readonly IShaderSupport[] _shaderSupports;
-
-        static ShaderSupport()
+        private static  IShaderSupport[] _shaderSupports;
+        
+        [InitializeOnLoadMethod]
+        static void Init()
         {
-            _shaderSupports = Utils.GetImplementClasses<IShaderSupport>();
+            _shaderSupports = new IShaderSupport[]
+            {
+                new lilToonSupport(),
+            };
         }
 
         private static IShaderSupport GetShaderSupport(Shader shader)

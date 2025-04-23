@@ -7,19 +7,27 @@ using UnityEditor;
 using UnityEngine.Experimental.Rendering;
 using UnityEngine.Rendering;
 using System.Runtime.InteropServices;
+using UnityEngine.Profiling;
 
 namespace com.aoyon.AutoConfigureTexture
 {    
     public class Utils
-    {     
+    {
+        private static Material s_alphaBinarizationMaterial;
+
+        [InitializeOnLoadMethod]
+        static void Init()
+        {
+            s_alphaBinarizationMaterial = new Material(Shader.Find("Hidden/AutoConfigureTexture/AlphaBinarization"));
+        }
+
         public static bool ContainsAlpha(Texture texture)
         {
             var temp = RenderTexture.GetTemporary(32, 32, 0, RenderTextureFormat.R8);
             var active = RenderTexture.active;
-            var mat = new Material(Shader.Find("Hidden/AutoConfigureTexture/AlphaBinarization"));
             try
             {
-                Graphics.Blit(texture, temp, mat);
+                Graphics.Blit(texture, temp, s_alphaBinarizationMaterial);
                 var request = AsyncGPUReadback.Request(temp, 0, TextureFormat.R8);
                 request.WaitForCompletion();
 
@@ -46,32 +54,10 @@ namespace com.aoyon.AutoConfigureTexture
             {
                 RenderTexture.active = active;
                 RenderTexture.ReleaseTemporary(temp);
-                UnityEngine.Object.DestroyImmediate(mat);
             }
         }
  
-        public static bool HasAlpha(Texture2D texture)
-        {
-            if (!GraphicsFormatUtility.HasAlphaChannel(texture.format))
-                return false;
-
-            var readableTexture = EnsureReadableTexture2D(texture);
-            return HasAlphaInData(readableTexture);
-        }
-
-        // TextureInfoにキャッシュする方
-        // 基本的にこっちを使いたい
-        public static bool HasAlpha(TextureInfo info)
-        {
-            var texture = info.Texture as Texture2D;
-            if (!GraphicsFormatUtility.HasAlphaChannel(texture.format))
-                return false;
-
-            var readableTexture = info.ReadbleTexture2D;
-            return HasAlphaInData(readableTexture);
-        }
-
-        private static bool HasAlphaInData(Texture2D readableTexture)
+        public static bool HasAlphaInData(Texture2D readableTexture)
         {
             var span = readableTexture.GetRawTextureData<Color32>().AsReadOnlySpan();
 
@@ -86,6 +72,22 @@ namespace com.aoyon.AutoConfigureTexture
             return hasAlpha;
         }
 
+        public static bool HasAlphaInMipMap(Texture2D readableTexture)
+        {
+            if (readableTexture.mipmapCount > 1)
+            {
+                var pixels = readableTexture.GetPixels32(readableTexture.mipmapCount - 1);
+                for (int i = 0; pixels.Length > i; i += 1)
+                {
+                    if (pixels[i].a != 255)
+                    {
+                        return true;
+                    }
+                }
+            }
+            throw new Exception();
+        }
+
         public static Texture2D EnsureReadableTexture2D(Texture2D texture2d)
         {
             if (texture2d.isReadable)
@@ -98,6 +100,7 @@ namespace com.aoyon.AutoConfigureTexture
 
         public static Texture2D GetReadableTexture2D(Texture2D texture2d)
         {
+            Profiler.BeginSample("GetReadableTexture2D");
             RenderTexture renderTexture = RenderTexture.GetTemporary(
                         texture2d.width,
                         texture2d.height,
@@ -113,6 +116,7 @@ namespace com.aoyon.AutoConfigureTexture
             readableTextur2D.Apply();
             RenderTexture.active = previous;
             RenderTexture.ReleaseTemporary(renderTexture);
+            Profiler.EndSample();
             return readableTextur2D;
         }
         
@@ -287,8 +291,7 @@ namespace com.aoyon.AutoConfigureTexture
 
         public static T[] GetImplementClasses<T>() where T : class
         {
-            return AppDomain.CurrentDomain.GetAssemblies()
-                .SelectMany(assembly => assembly.GetTypes())
+            return TypeCache.GetTypesDerivedFrom <T>()
                 .Where(type => typeof(T).IsAssignableFrom(type) && !type.IsInterface && !type.IsAbstract)
                 .Select(type => Activator.CreateInstance(type) as T)
                 .ToArray();

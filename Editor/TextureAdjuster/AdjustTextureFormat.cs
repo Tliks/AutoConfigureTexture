@@ -54,7 +54,7 @@ namespace com.aoyon.AutoConfigureTexture
             var channel = channels.Any(c => c.HasFlag(TextureChannel.Unknown))
                 ? TextureChannel.RGBA // 不明な使用用途が一つでもあった場合はRGBAとして処理
                 : channels.Aggregate((a, b) => a | b);
-        
+
             switch (channel)
             {
                 case TextureChannel.RGBA:
@@ -63,7 +63,7 @@ namespace com.aoyon.AutoConfigureTexture
                     {
                         format = current;
                     }
-                    else if (Utils.HasAlpha(info))
+                    else if (info.HasAlpha)
                     {
                         if (mode == FormatMode.HighQuality){
                             format = TextureFormat.BC7;

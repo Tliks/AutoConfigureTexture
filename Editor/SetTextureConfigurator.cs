@@ -7,6 +7,7 @@ using net.rs64.TexTransTool;
 using nadena.dev.ndmf;
 using nadena.dev.ndmf.runtime;
 using net.rs64.TexTransTool.TextureAtlas;
+using UnityEngine.Profiling;
 
 namespace com.aoyon.AutoConfigureTexture
 {    
@@ -48,18 +49,32 @@ namespace com.aoyon.AutoConfigureTexture
                 .ToHashSet();
 #endif
 
+            Profiler.BeginSample("MaterialInfo.Collect");
             var materialinfos = MaterialInfo.Collect(component.gameObject)
                 .Where(mi => !ifnoreMaterials.Contains(ObjectRegistry.GetReference(mi.Material)));
+            Profiler.EndSample();
+            Profiler.BeginSample("TextureInfo.Collect");
             var textureInfos = TextureInfo.Collect(materialinfos).ToArray();
+            Profiler.EndSample();
 
+            Profiler.BeginSample("Create Texture Configurator");
             var parent = new GameObject("Auto Texture Configurator");
             parent.transform.SetParent(avatarRoot);
             var configurators = CrateTextureConfigurators(textureInfos, parent, avatarRoot, component);
+            Profiler.EndSample();
 
-            var adjusters = Utils.GetImplementClasses<ITextureAdjuster>();
+            
+            var adjusters = new List<ITextureAdjuster>()
+            {
+                new AdjustTextureFormat(),
+                new AdjustTextureResolution(),
+                new RemoveMipMaps()
+            };
             foreach (var adjuster in adjusters)
             {
+                Profiler.BeginSample($"Process {adjuster.GetType().Name}");
                 ProcessAdjuster(adjuster, configurators, component.gameObject, component);
+                Profiler.EndSample();
             }
 
             return parent;
