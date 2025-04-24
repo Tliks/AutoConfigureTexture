@@ -15,25 +15,27 @@
 
 ## [0.5.0] - 2025-04-23
 ### Added
-- Added Japanese changelog.
+- 日本語の変更履歴を追加。
 
 ### Changed
-- Exclude materials operated on by TTT AtlasTexture from the execution target.
-    - Textures modified by AtlasTexture should be handled within AtlasTexture or subsequent processes, so they have been excluded from the target.
-- Changed the generation of TTT TextureConfigurator to absolute path mode instead of relative path.
-    - Previously, relative path mode was used to retain references to textures that might be manipulated by TTT AtlasTexture.
-    - However, this is no longer necessary because the above change excludes materials operated on by TTT AtlasTexture from the execution target.
-    - This also corresponds to the removal of relative path mode in TexTransTool v0.10.0-beta.5.
-- Significantly refactored the entire code in consideration of future feature additions.
-    - There is no impact on execution results.
-- Added `< v0.11.0` to the compatible TTT version specification.
-- Changed the determination of whether a texture contains transparency from strict to allowing a certain value.
-- Improved performance.
+- TTT AtlasTextureで操作されるマテリアルを、実行対象から除外するように変更。
+    - AtlasTexture で変更されるテクスチャは、AtlasTexture 内部またはそれ以降の処理で操作されるべきであるため、対象から除外しました。
+- TTT TextureConfigurator の生成を、相対パスではなく絶対パスモードで行うように変更。
+    - これまで、TTT AtlasTexture で操作される可能性のあるテクスチャへの参照を保持するため、相対パスモードを使用していました。
+    - しかし、上記の変更によりTTT AtlasTextureで操作されるマテリアルを実行対象から除外するように変更したため、不要となりました。
+    - これは同時に、TexTransTool v0.10.0-beta.5 における相対パスモードの削除に対応するものです。
+- 今後の機能追加を考慮し、コード全体を大幅にリファクタリング。
+    - 実行結果に影響はありません。
+- 互換性のある TTT のバージョン指定に、`< v0.11.0` を追加。
+- テクスチャに透明度が含まれているかの判定を、厳密なものから一定の値を許容するものに変更。
+- パフォーマンスを改善。
 
 ### Fixed
-- Fixed a potential error that could occur when there are shaders other than lilToon or unregistered properties.
-- Fixed an issue where the color space was not correctly reproduced when converting the format of gamma space textures.
+- lilToon 以外のシェーダーや、登録されていないプロパティが存在する場合に発生する可能性のあるエラーを修正。
+- ガンマ空間のテクスチャのフォーマットを変換する際に、色空間が正しく再現されない問題を修正。
 
+
+## 以下のバージョンには日本語の変更履歴はありません。
 
 ## [0.4.1] - 2025-2-07
 ### Changed
