@@ -1,10 +1,5 @@
-using System;
-using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
-using System.Linq;
-using UnityEditor;
-using UnityEngine;
 
 namespace com.aoyon.AutoConfigureTexture
 {

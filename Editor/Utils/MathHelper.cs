@@ -1,5 +1,4 @@
-﻿using UnityEngine;
-#if UNITY_2022_3_OR_NEWER
+﻿#if UNITY_2022_3_OR_NEWER
 using UnityEngine.Experimental.Rendering;
 #endif
 

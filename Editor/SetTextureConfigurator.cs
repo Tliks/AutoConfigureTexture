@@ -1,13 +1,7 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using UnityEngine;
-using UnityEditor;
 using net.rs64.TexTransTool;
 using nadena.dev.ndmf;
 using nadena.dev.ndmf.runtime;
 using net.rs64.TexTransTool.TextureAtlas;
-using UnityEngine.Profiling;
 
 namespace com.aoyon.AutoConfigureTexture
 {    

@@ -1,5 +1,3 @@
-using UnityEngine;
-
 namespace com.aoyon.AutoConfigureTexture
 {    
     internal interface IShaderSupport

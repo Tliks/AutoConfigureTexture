@@ -1,7 +1,3 @@
-using System.Linq;
-using UnityEditor;
-using UnityEngine;
-
 namespace com.aoyon.AutoConfigureTexture
 {
     internal static class ShaderSupport

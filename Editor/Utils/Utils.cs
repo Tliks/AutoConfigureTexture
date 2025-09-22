@@ -1,13 +1,6 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using UnityEngine;
 using nadena.dev.ndmf;
-using UnityEditor;
-using UnityEngine.Experimental.Rendering;
 using UnityEngine.Rendering;
 using System.Runtime.InteropServices;
-using UnityEngine.Profiling;
 
 namespace com.aoyon.AutoConfigureTexture
 {    

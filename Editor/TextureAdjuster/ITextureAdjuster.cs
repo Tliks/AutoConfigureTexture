@@ -1,6 +1,3 @@
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using UnityEngine;
 using net.rs64.TexTransTool;
 
 namespace com.aoyon.AutoConfigureTexture

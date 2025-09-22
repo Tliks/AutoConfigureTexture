@@ -1,7 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using UnityEngine;
 using VRC.SDK3.Avatars.Components;
 
 namespace com.aoyon.AutoConfigureTexture
