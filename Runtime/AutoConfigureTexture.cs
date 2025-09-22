@@ -34,8 +34,5 @@ namespace com.aoyon.AutoConfigureTexture
         public bool UseGradient = true;
         public bool IsPCOnly = true;
         public List<Texture2D> Exclude = new();
-
-        // 削除された機能。バージョンを下げたときの互換性のためにフィールドは残すが、次のマイナーあたりで削除する。
-        [Obsolete] public bool OptimizeMaterial = false; 
     }
 }
