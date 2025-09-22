@@ -7,26 +7,23 @@ msgstr ""
 
 
 
-msgid "OptimizeTextureFormat"
-msgstr "テクスチャの形式を最適化"
+msgid "AutoConfigureTexture:prop:OptimizeTextureFormat"
+msgstr "テクスチャの形式を変換"
 
-msgid "FormatMode"
+msgid "AutoConfigureTexture:prop:FormatMode"
 msgstr "変換のモード"
 
-msgid "MaintainCrunch"
-msgstr "クランチを保持"
+msgid "AutoConfigureTexture:prop:MaintainCrunch"
+msgstr "クランチ圧縮を保持"
 
-msgid "OptimizeMipMap"
+msgid "AutoConfigureTexture:prop:OptimizeMipMap"
 msgstr "MipMapを最適化"
 
-msgid "OptimizeMaterial"
-msgstr "マテリアルを最適化"
-
-msgid "ResolutionReduction"
+msgid "AutoConfigureTexture:prop:ResolutionReduction"
 msgstr "解像度を削減"
 
-msgid "IsPCOnly"
-msgstr "PCでのみ動作"
+msgid "AutoConfigureTexture:prop:IsPCOnly"
+msgstr "PC向けビルドでのみ動作"
 
-msgid "Exclude"
-msgstr "除外"
+msgid "AutoConfigureTexture:prop:Exclude"
+msgstr "除外設定"

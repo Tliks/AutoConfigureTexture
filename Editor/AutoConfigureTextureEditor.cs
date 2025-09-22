@@ -24,7 +24,7 @@ namespace com.aoyon.AutoConfigureTexture
 
         public override void OnInspectorGUI()
         {
-            L10n.SelectLanguageGUI();
+            Localization.DrawLanguageSwitcher();
             serializedObject.Update();
             PropertyField(OptimizeTextureFormat);
             if (OptimizeTextureFormat.boolValue)
@@ -44,7 +44,7 @@ namespace com.aoyon.AutoConfigureTexture
 
         private void PropertyField(SerializedProperty property)
         {
-            EditorGUILayout.PropertyField(property, L10n.G(property));
+            EditorGUILayout.PropertyField(property, $"AutoConfigureTexture:prop:{property.name}".LG());
         }
 
         [MenuItem("CONTEXT/AutoConfigureTexture/Attach TextureConfigurator")]

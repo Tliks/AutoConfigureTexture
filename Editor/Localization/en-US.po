@@ -7,26 +7,23 @@ msgstr ""
 
 
 
-msgid "OptimizeTextureFormat"
-msgstr "Optimize Texture Format"
+msgid "AutoConfigureTexture:prop:OptimizeTextureFormat"
+msgstr "Convert texture format"
 
-msgid "FormatMode"
-msgstr "Format Mode"
+msgid "AutoConfigureTexture:prop:FormatMode"
+msgstr "Conversion mode"
 
-msgid "MaintainCrunch"
-msgstr "Maintain Crunch"
+msgid "AutoConfigureTexture:prop:MaintainCrunch"
+msgstr "Preserve crunch compression"
 
-msgid "OptimizeMipMap"
+msgid "AutoConfigureTexture:prop:OptimizeMipMap"
 msgstr "Optimize MipMap"
 
-msgid "OptimizeMaterial"
-msgstr "Optimize Material"
+msgid "AutoConfigureTexture:prop:ResolutionReduction"
+msgstr "Reduce resolution"
 
-msgid "ResolutionReduction"
-msgstr "Resolution Reduction"
+msgid "AutoConfigureTexture:prop:IsPCOnly"
+msgstr "Only for PC build"
 
-msgid "IsPCOnly"
-msgstr "IsPCOnly"
-
-msgid "Exclude"
-msgstr "Exclude"
+msgid "AutoConfigureTexture:prop:Exclude"
+msgstr "Exclusion settings"

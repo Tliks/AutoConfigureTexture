@@ -1,75 +1,66 @@
-using System.Globalization;
-using System.IO;
+using nadena.dev.ndmf.localization;
+using nadena.dev.ndmf.ui;
+using UnityEngine.UIElements;
 
-namespace com.aoyon.AutoConfigureTexture
+namespace com.aoyon.AutoConfigureTexture;
+
+internal static class Localization
 {
-    internal partial class L10n
+    private const string LocalizationFolderGUID = "08da4be78bd777d44a816cf4e2232999";
+    private const string DefaultLanguage = "en-US";
+    private static readonly string[] SupportedLanguages = new string[] { "en-US", "ja-JP" };
+
+    private static Localizer? _ndmfLocalizer;
+    public static Localizer NdmfLocalizer => _ndmfLocalizer ??= InitializeLocalizer();
+
+    public static event Action? OnLanguageChanged;
+
+    [InitializeOnLoadMethod]
+    static void Init()
     {
-        private const string PREFERENCE_KEY = "com.aoyon.AutoConfigureTexture.lang";
-
-        public static string language;
-        public static LocalizationAsset localizationAsset;
-        private static string[] languages;
-        private static string[] languageNames;
-        private static readonly Dictionary<string, GUIContent> guicontents = new();
-        private static string localizationFolder => AssetDatabase.GUIDToAssetPath("08da4be78bd777d44a816cf4e2232999");
-
-        internal static void Load()
-        {
-            guicontents.Clear();
-            language ??= EditorPrefs.GetString(PREFERENCE_KEY, "en-US");
-            var path = localizationFolder + "/" + language + ".po";
-            if(File.Exists(path)) localizationAsset = AssetDatabase.LoadAssetAtPath<LocalizationAsset>(path);
-
-            if(!localizationAsset) localizationAsset = new LocalizationAsset();
-        }
-
-        internal static string[] GetLanguages()
-        {
-            return languages ??= Directory.GetFiles(localizationFolder).Where(f => f.EndsWith(".po")).Select(f => Path.GetFileNameWithoutExtension(f)).ToArray();
-        }
-
-        internal static string[] GetLanguageNames()
-        {
-            return languageNames ??= languages.Select(l => {
-                if(l == "zh-Hans") return "简体中文";
-                if(l == "zh-Hant") return "繁體中文";
-                return new CultureInfo(l).NativeName;
-            }).ToArray();
-        }
-
-        internal static string L(string key)
-        {
-            if(!localizationAsset) Load();
-            return localizationAsset.GetLocalizedString(key);
-        }
-
-        private static GUIContent G(string key) => G(key, null, "");
-        private static GUIContent G(string[] key) => key.Length == 2 ? G(key[0], null, key[1]) : G(key[0], null, null);
-        internal static GUIContent G(string key, string tooltip) => G(key, null, tooltip); // From EditorToolboxSettings
-        private static GUIContent G(string key, Texture image) => G(key, image, "");
-        internal static GUIContent G(SerializedProperty property) => G(property.name, $"{property.name}.tooltip");
-
-        private static GUIContent G(string key, Texture image, string tooltip)
-        {
-            if(!localizationAsset) Load();
-            if(guicontents.TryGetValue(key, out var content)) return content;
-            return guicontents[key] = new GUIContent(L(key), image, L(tooltip));
-        }
-
-        internal static void SelectLanguageGUI()
-        {
-            var langs = GetLanguages();
-            var names = GetLanguageNames();
-            EditorGUI.BeginChangeCheck();
-            var ind = EditorGUILayout.Popup("Language", Array.IndexOf(langs, language), names);
-            if(EditorGUI.EndChangeCheck())
-            {
-                language = langs[ind];
-                EditorPrefs.SetString(PREFERENCE_KEY, language);
-                Load();
-            }
-        }
+        LanguagePrefs.RegisterLanguageChangeCallback(typeof(Localization), _ => OnLanguageChanged?.Invoke());
     }
 
+    private static Localizer InitializeLocalizer()
+    {
+        return new Localizer(DefaultLanguage, () =>
+        {
+            var localizationFolderPath = AssetDatabase.GUIDToAssetPath(LocalizationFolderGUID);
+            var assets = new List<LocalizationAsset>();
+            foreach (var language in SupportedLanguages)
+            {
+                var asset = AssetDatabase.LoadAssetAtPath<LocalizationAsset>(localizationFolderPath + "/" + language + ".po");
+                if (asset == null)
+                {
+                    Debug.LogError($"Localization asset not found for language: {language}");
+                    continue;
+                }
+                assets.Add(asset);
+            }
+            return assets;
+        });
+    }
+    
+    private const string TooltipSuffix = ":tooltip";
+    public static string S(string key) => NdmfLocalizer.GetLocalizedString(key);
+    public static GUIContent G(string key)
+    {
+        var localized = NdmfLocalizer.GetLocalizedString(key);
+        if (NdmfLocalizer.TryGetLocalizedString(key + TooltipSuffix, out var tooltip))
+        {
+            return new GUIContent(localized, tooltip);
+        }
+        return new GUIContent(localized);
+    }
+
+    public static void LocalizeUIElements(VisualElement element) => NdmfLocalizer.LocalizeUIElements(element);
+
+    public static void DrawLanguageSwitcher() => LanguageSwitcher.DrawImmediate();
+    public static VisualElement CreateLanguageSwitcher() => new LanguageSwitcher();
+}
+
+internal static class LocalizationExtensions
+{
+    public static string LS(this string key) => Localization.S(key);
+    public static GUIContent LG(this string key) => Localization.G(key);
 }
