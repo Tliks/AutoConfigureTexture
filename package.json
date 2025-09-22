@@ -12,6 +12,6 @@
   "changelogUrl": "https://github.com/Tliks/AutoConfigureTexture/blob/master/CHANGELOG.md",
   "vpmDependencies": {
     "nadena.dev.ndmf": ">=1.5.0",
-    "net.rs64.tex-trans-tool": ">=0.8.7 <0.11.0"
+    "net.rs64.tex-trans-tool": ">=1.0.0"
   }
 }
