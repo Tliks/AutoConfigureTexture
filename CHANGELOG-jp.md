@@ -4,6 +4,7 @@
 ### Added
 
 ### Changed
+- TexTransToolの依存関係の宣言を>=1.0.0に変更。
 
 ### Deprecated
 
