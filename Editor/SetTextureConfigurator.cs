@@ -7,7 +7,7 @@ namespace com.aoyon.AutoConfigureTexture
 {    
     public class SetTextureConfigurator
     {
-        public static GameObject Apply(AutoConfigureTexture component)
+        public static GameObject? Apply(AutoConfigureTexture component)
         {
             if (component == null || (!component.OptimizeTextureFormat && !component.OptimizeMipMap && component.ResolutionReduction == Reduction.None))
                 return null;
@@ -18,18 +18,18 @@ namespace com.aoyon.AutoConfigureTexture
                     return null;
                 }
             }
+            var avatarRoot = RuntimeUtil.FindAvatarInParents(component.transform);
+            if (avatarRoot == null) return null;
+            
             var stopwatch = System.Diagnostics.Stopwatch.StartNew();
-            var r = ApplyImpl(component);
+            var r = ApplyImpl(avatarRoot, component);
             stopwatch.Stop();
             Debug.Log($"ApplyImpl executed in {stopwatch.ElapsedMilliseconds} ms");
             return r;
         }
 
-        private static GameObject ApplyImpl(AutoConfigureTexture component)
+        private static GameObject ApplyImpl(Transform avatarRoot, AutoConfigureTexture component)
         {
-            var avatarRoot = RuntimeUtil.FindAvatarInParents(component.transform);
-            if (avatarRoot == null) return null;
-
             var atlasTextures = avatarRoot.GetComponentsInChildren<AtlasTexture>(false);
 #if ACT_HAS_TTT_0_10_0_OR_NEWER
             var ifnoreMaterials = atlasTextures.SelectMany(at => at.AtlasTargetMaterials)
@@ -120,11 +120,11 @@ namespace com.aoyon.AutoConfigureTexture
         {
             var infos = targets.Select(x => x.Item1);
 
-            adjuster.Init(root, infos, config);
+            adjuster.Init(root, config);
 
             foreach (var (info, configurator) in targets)
             {
-                if (adjuster.ShouldProcess && adjuster.Validate(info) && adjuster.Process(info, out var data))
+                if (adjuster.ShouldProcess && adjuster.Process(info, out var data))
                 {
                     adjuster.SetValue(configurator, data);
                 }

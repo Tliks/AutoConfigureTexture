@@ -45,7 +45,7 @@ namespace com.aoyon.AutoConfigureTexture
             return true;
         }
 
-        private Mesh GetMesh(Renderer renderer, Dictionary<Renderer, Mesh> meshes)
+        private Mesh? GetMesh(Renderer renderer, Dictionary<Renderer, Mesh> meshes)
         {
             if (renderer is SkinnedMeshRenderer skinnedMeshRenderer)
             {

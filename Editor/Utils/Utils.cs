@@ -225,7 +225,7 @@ namespace com.aoyon.AutoConfigureTexture
 
         public static Mesh MergeMesh(IEnumerable<(Mesh mesh, int submeshIndex)> meshes)
         {
-            Mesh combinedMesh = null;
+            Mesh? combinedMesh = null;
             var vertices = new List<Vector3>();
             var triangles = new List<int>();
             var uvs = new List<Vector2>();
@@ -272,7 +272,7 @@ namespace com.aoyon.AutoConfigureTexture
             return combinedMesh;
         }
 
-        public static Mesh GetMesh(Renderer renderer)
+        public static Mesh? GetMesh(Renderer renderer)
         {
             if (renderer is SkinnedMeshRenderer skinnedMeshRenderer)
             {
@@ -286,14 +286,6 @@ namespace com.aoyon.AutoConfigureTexture
             {
                 return null;
             }
-        }
-
-        public static T[] GetImplementClasses<T>() where T : class
-        {
-            return TypeCache.GetTypesDerivedFrom <T>()
-                .Where(type => typeof(T).IsAssignableFrom(type) && !type.IsInterface && !type.IsAbstract)
-                .Select(type => Activator.CreateInstance(type) as T)
-                .ToArray();
         }
     }
 }

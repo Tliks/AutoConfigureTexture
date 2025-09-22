@@ -7,10 +7,10 @@ namespace com.aoyon.AutoConfigureTexture
         public bool ShouldProcess => _shouldProcess;
         private bool _shouldProcess = false;
 
-        private AutoConfigureTexture _config;
-        private MaterialArea _materialArea;
+        private AutoConfigureTexture _config = null!;
+        private MaterialArea _materialArea = null!;
 
-        public void Init(GameObject root, IEnumerable<TextureInfo> textureinfos, AutoConfigureTexture config)
+        public void Init(GameObject root, AutoConfigureTexture config)
         {
             if (config.ResolutionReduction == Reduction.None)
                 _shouldProcess = false;;
@@ -25,41 +25,31 @@ namespace com.aoyon.AutoConfigureTexture
             return;
         }
 
-        public bool Validate(TextureInfo info)
-        {
-            var texture = info.Texture as Texture2D;
-            if (texture == null) return false;
-
-            var usage = info.PrimaryUsage;
-            if (usage == TextureUsage.Unknown)
-                return false;
-
-            return true;
-        }
-
         public void SetDefaultValue(TextureConfigurator configurator, TextureInfo info)
         {
             configurator.TextureSize = info.Texture.width;
         }
 
-        public void SetValue(TextureConfigurator configurator, AdjustData<object> data)
+        public void SetValue(TextureConfigurator configurator, AdjustData data)
         {
             configurator.OverrideTextureSetting = true;
-            var resolution = (int)data.Data;
+            var resolution = data.GetData<int>();
             configurator.TextureSize = resolution;
         }
 
-        public bool Process(TextureInfo info, out AdjustData<object> data)
+        public bool Process(TextureInfo info, [NotNullWhen(true)] out AdjustData? data)
         {
+            data = null;
 
-            var texture = info.Texture as Texture2D;
+            if (info.Texture is not Texture2D texture)
+                return false;
+            if (texture == null) return false;
+
             var propertyInfos = info.Properties;
 
             int width = texture.width;
             var resolution = width;
             
-            data = null;
-
             var reduction = _config.ResolutionReduction;
             if (reduction == Reduction.None)
                 return false;
@@ -146,7 +136,7 @@ namespace com.aoyon.AutoConfigureTexture
                 }
             }
 
-            data = new(resolution);
+            data = AdjustData.Create(resolution);
             return resolution != width;
 
             // 解像度が指定された最小値を下回らないようにしつつ、指定された除数で解像度を減少させます。

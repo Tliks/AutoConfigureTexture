@@ -30,8 +30,6 @@ namespace com.aoyon.AutoConfigureTexture
         public bool MaintainCrunch = true;
         public bool OptimizeMipMap = true;
         public Reduction ResolutionReduction = Reduction.Normal;
-        public bool UsePosition = true;
-        public bool UseGradient = true;
         public bool IsPCOnly = true;
         public List<Texture2D> Exclude = new();
     }

@@ -2,7 +2,7 @@ namespace com.aoyon.AutoConfigureTexture
 {
     internal static class ShaderSupport
     {
-        private static  IShaderSupport[] _shaderSupports;
+        private static  IShaderSupport[] _shaderSupports = Array.Empty<IShaderSupport>();
         
         [InitializeOnLoadMethod]
         static void Init()
@@ -13,7 +13,7 @@ namespace com.aoyon.AutoConfigureTexture
             };
         }
 
-        private static IShaderSupport GetShaderSupport(Shader shader)
+        private static IShaderSupport? GetShaderSupport(Shader shader)
         {
             if (shader == null) return null;
             var supports = _shaderSupports.Where(s => s.IsTarget(shader));
@@ -25,7 +25,7 @@ namespace com.aoyon.AutoConfigureTexture
             return supports.First();
         }
 
-        private static IShaderSupport GetShaderSupport(Material material)
+        private static IShaderSupport? GetShaderSupport(Material material)
         {
             var shader = material?.shader;
             if (shader == null) return null;
@@ -51,11 +51,11 @@ namespace com.aoyon.AutoConfigureTexture
             return shaderSupport.GetTextureUsage(shader, property);
         }
 
-        public static bool IsVertexShader(Shader shader, string property) 
+        public static bool? IsVertexShader(Shader shader, string property) 
         {
             var shaderSupport = GetShaderSupport(shader);
             if (shaderSupport == null)
-                return true;
+                return null;
             return shaderSupport.IsVertexShader(shader, property);
         }
     }

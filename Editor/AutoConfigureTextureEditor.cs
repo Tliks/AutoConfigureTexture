@@ -3,15 +3,15 @@ namespace com.aoyon.AutoConfigureTexture
     [CustomEditor(typeof(AutoConfigureTexture))]
     public class AutoConfigureTextureEditor : Editor
     {
-        private SerializedProperty OptimizeTextureFormat;
-        private SerializedProperty FormatMode;
-        private SerializedProperty MaintainCrunch;
-        private SerializedProperty OptimizeMipMap;
-        private SerializedProperty ResolutionReduction;
-        private SerializedProperty IsPCOnly;
-        private SerializedProperty Exclude;
+        private SerializedProperty OptimizeTextureFormat = null!;
+        private SerializedProperty FormatMode = null!;
+        private SerializedProperty MaintainCrunch = null!;
+        private SerializedProperty OptimizeMipMap = null!;
+        private SerializedProperty ResolutionReduction = null!;
+        private SerializedProperty IsPCOnly = null!;
+        private SerializedProperty Exclude = null!;
 
-        private void OnEnable()
+        void OnEnable()
         {
             OptimizeTextureFormat = serializedObject.FindProperty(nameof(AutoConfigureTexture.OptimizeTextureFormat));
             FormatMode = serializedObject.FindProperty(nameof(AutoConfigureTexture.FormatMode));
@@ -50,7 +50,7 @@ namespace com.aoyon.AutoConfigureTexture
         [MenuItem("CONTEXT/AutoConfigureTexture/Attach TextureConfigurator")]
         private static void AttachTextureConfigurators(MenuCommand command)
         {
-            var component = command.context as AutoConfigureTexture;
+            var component = (AutoConfigureTexture)command.context;
             var go = SetTextureConfigurator.Apply(component);
             Undo.RegisterCreatedObjectUndo(go, "Auto Configure Texture Setup");
             Selection.activeGameObject = go;

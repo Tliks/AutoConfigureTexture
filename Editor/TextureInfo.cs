@@ -17,17 +17,18 @@ namespace com.aoyon.AutoConfigureTexture
         public readonly bool MipmapEnabled;
         public readonly bool isReadable;
 
-        private Texture2D _readableTexture;
-        public Texture2D ReadbleTexture2D
+        private Texture2D? _readableTexture;
+        public Texture2D GetReadableTexture2D()
         {
-            get
+            if (Texture is not Texture2D texture)
             {
-                if (_readableTexture == null)
-                {
-                    _readableTexture = Utils.EnsureReadableTexture2D(Texture as Texture2D);;
-                }
-                return _readableTexture;
+                throw new InvalidOperationException($"Texture is not Texture2D: {Texture.name}");
             }
+            if (_readableTexture == null)
+            {
+                _readableTexture = Utils.EnsureReadableTexture2D(texture);
+            }
+            return _readableTexture;
         }
 
         private TextureUsage _primaryUsage;
@@ -80,7 +81,7 @@ namespace com.aoyon.AutoConfigureTexture
             Texture = texture;
             Properties = new List<PropertyInfo>();
 
-            Type = default;
+            Type = texture.GetType();
             Format = default;
             Compression = default;
             CompressionQuality = default;

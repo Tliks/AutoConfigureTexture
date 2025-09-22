@@ -7,19 +7,15 @@ namespace com.aoyon.AutoConfigureTexture
         public bool ShouldProcess => _shouldProcess;
         private bool _shouldProcess = false;
 
-        public void Init(GameObject root, IEnumerable<TextureInfo> textureinfos, AutoConfigureTexture config)
+        public void Init(GameObject root, AutoConfigureTexture config)
         {
             _shouldProcess = config.OptimizeMipMap;
             return;
-        }
-        public bool Validate(TextureInfo info)
+        }   
+        public bool Process(TextureInfo info, [NotNullWhen(true)] out AdjustData? data)
         {
-            return true;
-        }
-        public bool Process(TextureInfo info, out AdjustData<object> data)
-        {
-            var shouldRemove = info.Properties.All(p => ShaderSupport.IsVertexShader(p.Shader, p.PropertyName));
-            data = new AdjustData<object>(shouldRemove);
+            var shouldRemove = info.Properties.All(p => ShaderSupport.IsVertexShader(p.Shader, p.PropertyName) == true);
+            data = AdjustData.Create(shouldRemove);
             return shouldRemove;
         }
         public void SetDefaultValue(TextureConfigurator configurator, TextureInfo info)
@@ -27,7 +23,7 @@ namespace com.aoyon.AutoConfigureTexture
             configurator.MipMap = true;
         }
 
-        public void SetValue(TextureConfigurator configurator, AdjustData<object> data)
+        public void SetValue(TextureConfigurator configurator, AdjustData data)
         {
             configurator.OverrideCompression = true;
             configurator.MipMap = true;

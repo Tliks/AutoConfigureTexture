@@ -4,15 +4,27 @@ namespace com.aoyon.AutoConfigureTexture
 {    
     internal interface ITextureAdjuster
     {
-        public void Init(GameObject root, IEnumerable<TextureInfo> textureinfos, AutoConfigureTexture config);
+        public void Init(GameObject root, AutoConfigureTexture config);
         public bool ShouldProcess { get; }
-        public bool Validate(TextureInfo info);
-        public bool Process(TextureInfo info, out AdjustData<object> data);
-        public void SetValue(TextureConfigurator configurator, AdjustData<object> data);
+        public bool Process(TextureInfo info, [NotNullWhen(true)] out AdjustData? data);
+        public void SetValue(TextureConfigurator configurator, AdjustData data);
         public void SetDefaultValue(TextureConfigurator configurator, TextureInfo info);
     }
 
-    internal class AdjustData<T>
+    internal class AdjustData
+    {
+        public static AdjustData Create<T>(T data)
+        {
+            return new AdjustData<T>(data);
+        }
+
+        public T GetData<T>()
+        {
+            return ((AdjustData<T>)this).Data;
+        }
+    }
+
+    internal class AdjustData<T> : AdjustData
     {
         public T Data { get; }
 

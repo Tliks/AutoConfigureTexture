@@ -7,9 +7,9 @@ namespace com.aoyon.AutoConfigureTexture
         public bool ShouldProcess => _shouldProcess;
         private bool _shouldProcess = false;
 
-        private AutoConfigureTexture _config;
+        private AutoConfigureTexture _config = null!;
 
-        public void Init(GameObject root, IEnumerable<TextureInfo> textureinfos, AutoConfigureTexture config)
+        public void Init(GameObject root, AutoConfigureTexture config)
         {
             _config = config;
             BuildTarget currentBuildTarget = EditorUserBuildSettings.activeBuildTarget;
@@ -22,22 +22,23 @@ namespace com.aoyon.AutoConfigureTexture
             _shouldProcess = true;
             return;
         }
-        public bool Validate(TextureInfo info)
+
+        public bool Process(TextureInfo info, [NotNullWhen(true)] out AdjustData? data)
         {
-            var currentFormat = info.Format;
-            if (_config.MaintainCrunch &&
-                (currentFormat == TextureFormat.DXT5Crunched || currentFormat == TextureFormat.DXT1Crunched)){
+            data = null;
+            
+            if (info.Texture is not Texture2D tex)
+            {
                 return false;
             }
-            return true;
-        }
-
-        public bool Process(TextureInfo info, out AdjustData<object> data)
-        {
-            var tex = info.Texture as Texture2D;
 
             var current = info.Format;
             var format = current;
+
+            if (_config.MaintainCrunch &&
+                (current == TextureFormat.DXT5Crunched || current == TextureFormat.DXT1Crunched)){
+                return false;
+            }
 
             var mode = _config.FormatMode;
             var currentBPP = MathHelper.FormatToBPP(current);
@@ -158,7 +159,7 @@ namespace com.aoyon.AutoConfigureTexture
                 format = current;
             }
 
-            data = new AdjustData<object>(format);
+            data = AdjustData.Create(format);
             return current != format;
         }
 
@@ -168,11 +169,11 @@ namespace com.aoyon.AutoConfigureTexture
             configurator.CompressionSetting.OverrideTextureFormat = info.Format;
         }
 
-        public void SetValue(TextureConfigurator configurator, AdjustData<object> data)
+        public void SetValue(TextureConfigurator configurator, AdjustData data)
         {
             configurator.OverrideCompression = true;
             configurator.CompressionSetting.UseOverride = true;
-            configurator.CompressionSetting.OverrideTextureFormat = (TextureFormat)data.Data;
+            configurator.CompressionSetting.OverrideTextureFormat = data.GetData<TextureFormat>();
         }
     }
 }

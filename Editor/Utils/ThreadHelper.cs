@@ -5,7 +5,7 @@ namespace com.aoyon.AutoConfigureTexture
 {
     public class ThreadHelper
     {
-        private static SynchronizationContext _mainThreadContext;
+        private static SynchronizationContext _mainThreadContext = null!;
         private static int _mainThreadId;
 
         [InitializeOnLoadMethod]
@@ -20,6 +20,7 @@ namespace com.aoyon.AutoConfigureTexture
             return Thread.CurrentThread.ManagedThreadId == _mainThreadId;
         }
 
+        /*
         public static void ExecuteOnMainThread(Action action)
         {
             if (IsMainThread())
@@ -68,5 +69,6 @@ namespace com.aoyon.AutoConfigureTexture
 
             return result;
         }
+        */
     }
 }
