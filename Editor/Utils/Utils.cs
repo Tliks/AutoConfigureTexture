@@ -13,36 +13,31 @@ namespace com.aoyon.AutoConfigureTexture
 {    
     public class Utils
     {
-        private static Material s_alphaBinarizationMaterial;
-
-        [InitializeOnLoadMethod]
-        static void Init()
+        private static Material? s_alphaBinarizationMaterial = null;
+        private static Material AlphaBinarizationMaterial
         {
-            InitializeAlphaBinarizationMaterial();
-        }
-
-        private static void InitializeAlphaBinarizationMaterial()
-        {
-            if (s_alphaBinarizationMaterial == null)
+            get
             {
-                var alphaBinarization = Shader.Find("Hidden/AutoConfigureTexture/AlphaBinarization");
-                if (alphaBinarization == null)
+                if (s_alphaBinarizationMaterial == null)
                 {
-                    Debug.LogError("Shader not found: Hidden/AutoConfigureTexture/AlphaBinarization");
-                    return;
+                    var alphaBinarization = Shader.Find("Hidden/AutoConfigureTexture/AlphaBinarization");
+                    if (alphaBinarization == null)
+                    {
+                        throw new Exception("Shader not found: Hidden/AutoConfigureTexture/AlphaBinarization");
+                    }
+                    s_alphaBinarizationMaterial = new Material(alphaBinarization);
                 }
-                s_alphaBinarizationMaterial = new Material(alphaBinarization);
+                return s_alphaBinarizationMaterial;
             }
         }
 
         public static bool HasAlphaWithBinarization(Texture texture)
         {
-            InitializeAlphaBinarizationMaterial();
             var temp = RenderTexture.GetTemporary(32, 32, 0, RenderTextureFormat.R8);
             var active = RenderTexture.active;
             try
             {
-                Graphics.Blit(texture, temp, s_alphaBinarizationMaterial);
+                Graphics.Blit(texture, temp, AlphaBinarizationMaterial);
                 var request = AsyncGPUReadback.Request(temp, 0, TextureFormat.R8);
                 request.WaitForCompletion();
 
