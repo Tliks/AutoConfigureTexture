@@ -9,6 +9,7 @@ namespace com.aoyon.AutoConfigureTexture
 
         public readonly Type Type;
         public readonly TextureFormat Format;
+        public readonly TextureImporterType TextureImporterType;
         public readonly TextureImporterCompression Compression;
         public readonly int CompressionQuality;
         public readonly bool sRGBTexture;
@@ -83,6 +84,7 @@ namespace com.aoyon.AutoConfigureTexture
 
             Type = texture.GetType();
             Format = default;
+            TextureImporterType = default;
             Compression = default;
             CompressionQuality = default;
             sRGBTexture = default;
@@ -100,6 +102,7 @@ namespace com.aoyon.AutoConfigureTexture
             var importer = AssetImporter.GetAtPath(AssetDatabase.GetAssetPath(texture));
             if (importer is TextureImporter ti)
             {
+                TextureImporterType = ti.textureType;
                 Compression = ti.textureCompression; 
                 CompressionQuality = ti.compressionQuality;
                 sRGBTexture = ti.sRGBTexture;

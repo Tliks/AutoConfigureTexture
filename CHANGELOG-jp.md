@@ -5,12 +5,14 @@
 
 ### Changed
 - TexTransToolの依存関係の宣言を>=1.0.0に変更。
+- TextureImporterTypeがDefaultなテクスチャのみを処理の対象とするように変更
 
 ### Deprecated
 
 ### Removed
 
 ### Fixed
+- TextureImporterTypeがNormalMapのテクスチャの圧縮形式を変更する際に、アルファが考慮されていない問題を修正。
 
 ### Security
 
