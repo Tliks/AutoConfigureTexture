@@ -1,6 +1,7 @@
+using com.aoyon.AutoConfigureTexture.Analyzer;
 using net.rs64.TexTransTool;
 
-namespace com.aoyon.AutoConfigureTexture
+namespace com.aoyon.AutoConfigureTexture.Adjuster
 {    
     internal class AdjustTextureResolution : ITextureAdjuster
     {
@@ -8,7 +9,6 @@ namespace com.aoyon.AutoConfigureTexture
         private bool _shouldProcess = false;
 
         private AutoConfigureTexture _config = null!;
-        private MaterialArea _materialArea = null!;
 
         public void Init(GameObject root, AutoConfigureTexture config)
         {
@@ -17,17 +17,12 @@ namespace com.aoyon.AutoConfigureTexture
             _shouldProcess = true;
 
             _config = config;
-
-            if (_shouldProcess)
-            {   
-                _materialArea = new MaterialArea(root.transform);
-            }
             return;
         }
 
         public void SetDefaultValue(TextureConfigurator configurator, TextureInfo info)
         {
-            configurator.TextureSize = info.Texture.width;
+            configurator.TextureSize = info.Texture2D.width;
         }
 
         public void SetValue(TextureConfigurator configurator, AdjustData data)
@@ -37,24 +32,20 @@ namespace com.aoyon.AutoConfigureTexture
             configurator.TextureSize = resolution;
         }
 
-        public bool Process(TextureInfo info, [NotNullWhen(true)] out AdjustData? data)
+        public bool Process(TextureInfo info, TextureAnalyzer analyzer, [NotNullWhen(true)] out AdjustData? data)
         {
             data = null;
 
-            if (info.Texture is not Texture2D texture)
-                return false;
-            if (texture == null) return false;
-
             var propertyInfos = info.Properties;
 
-            int width = texture.width;
+            int width = info.Texture2D.width;
             var resolution = width;
             
             var reduction = _config.ResolutionReduction;
             if (reduction == Reduction.None)
                 return false;
 
-            var usage = info.PrimaryUsage;
+            var usage = analyzer.PrimaryUsage(info);
             if (usage == TextureUsage.Unknown)
                 return false;
 
@@ -162,8 +153,7 @@ namespace com.aoyon.AutoConfigureTexture
                 if (currentValue <= minimum)
                     return;
 
-                var materials = propertyInfos.Select(info => info.MaterialInfo.Material);
-                if (_materialArea.IsUnderHeight(materials, 0.5f))
+                if (analyzer.IsAllAreaUnderHeight(info, thresholdRatio))
                     currentValue = Mathf.Max(currentValue / divisor, minimum);
             }
         }

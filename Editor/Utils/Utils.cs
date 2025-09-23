@@ -280,7 +280,9 @@ namespace com.aoyon.AutoConfigureTexture
             }
             else if (renderer is MeshRenderer meshRenderer)
             {
-                return meshRenderer.GetComponent<MeshFilter>()?.sharedMesh;
+                var meshFilter = meshRenderer.GetComponent<MeshFilter>();
+                if (meshFilter == null) return null;
+                return meshFilter.sharedMesh;
             }
             else
             {

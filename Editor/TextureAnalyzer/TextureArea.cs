@@ -1,51 +1,43 @@
 using VRC.SDK3.Avatars.Components;
 
-namespace com.aoyon.AutoConfigureTexture
+namespace com.aoyon.AutoConfigureTexture.Analyzer
 {
-    public class MaterialArea
+    internal class TextureAreaAnalyzer
     {
         private readonly Vector3 _worldViewPos;
-        private readonly IEnumerable<Renderer> _renderers;
-        private Dictionary<Renderer, Mesh> _meshes = new Dictionary<Renderer, Mesh>();
+        private readonly Dictionary<Renderer, Mesh> _meshes = new Dictionary<Renderer, Mesh>();
 
-        public MaterialArea(Transform root)
+        public TextureAreaAnalyzer(Transform root)
         {
             var descriptor = root.GetComponentInParent<VRCAvatarDescriptor>();
             if (descriptor == null) throw new InvalidOperationException();
-
             var rootPos = descriptor.transform.position;
             var viewPos = descriptor.ViewPosition;
-
             _worldViewPos = rootPos + viewPos;
-
-            _renderers = root.GetComponentsInChildren<Renderer>(true)
-                .Where(r => r is SkinnedMeshRenderer or MeshRenderer);
         }
 
-        public bool IsUnderHeight(IEnumerable<Material> materials, float thresholdRatio)
-        {
-            return materials.All(m => IsUnderHeight(m, thresholdRatio));
-        }
-
-        public bool IsUnderHeight(Material material, float thresholdRatio)
+        public bool IsAllAreaUnderHeight(TextureInfo textureInfo, float thresholdRatio)
         {
             var height = _worldViewPos.y * thresholdRatio;
 
-            foreach (var renderer in _renderers)
-            {
-                var subMeshIndex = GetSubmeshIndex(renderer, material);
-                if (subMeshIndex == -1) continue;
+            var renderers = textureInfo.Properties
+                .SelectMany(p => p.MaterialInfo.Renderers);
 
-                var mesh = GetMesh(renderer, _meshes);
+            foreach ((var renderer, var indices) in renderers)
+            {
+                var mesh = GetBakedMesh(renderer, _meshes);
                 if (mesh == null) continue;
 
-                if (!IsMeshUnderHeight(renderer.transform, mesh, subMeshIndex, height)) 
-                    return false;
+                foreach (var index in indices)
+                {
+                    if (!IsMeshUnderHeight(renderer.transform, mesh, index, height)) 
+                        return false;
+                }
             }
             return true;
         }
 
-        private Mesh? GetMesh(Renderer renderer, Dictionary<Renderer, Mesh> meshes)
+        private Mesh? GetBakedMesh(Renderer renderer, Dictionary<Renderer, Mesh> meshes)
         {
             if (renderer is SkinnedMeshRenderer skinnedMeshRenderer)
             {
@@ -73,7 +65,7 @@ namespace com.aoyon.AutoConfigureTexture
             }
         }
 
-        private bool IsMeshUnderHeight(Transform transform, Mesh mesh, int subMeshIndex, float height)
+        private bool IsMeshUnderHeight(Transform rendererTransform, Mesh mesh, int subMeshIndex, float height)
         {
             var vertices = mesh.vertices;
 
@@ -82,7 +74,7 @@ namespace com.aoyon.AutoConfigureTexture
             foreach (var index in indices)
             {
                 var vertex = vertices[index];
-                var worldPos = transform.TransformPoint(vertex);
+                var worldPos = rendererTransform.TransformPoint(vertex);
 
                 if (worldPos.y >= height)
                 {
@@ -93,17 +85,5 @@ namespace com.aoyon.AutoConfigureTexture
             return true;
         }
 
-        private static int GetSubmeshIndex(Renderer renderer, Material material)
-        {
-            Material[] materials = renderer.sharedMaterials;
-            for (int i = 0; i < materials.Length; i++)
-            {
-                if (materials[i] == material)
-                {
-                    return i;
-                }
-            }
-            return -1; 
-        }
     }
 }

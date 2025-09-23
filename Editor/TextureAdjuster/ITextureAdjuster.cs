@@ -1,12 +1,13 @@
+using com.aoyon.AutoConfigureTexture.Analyzer;
 using net.rs64.TexTransTool;
 
-namespace com.aoyon.AutoConfigureTexture
+namespace com.aoyon.AutoConfigureTexture.Adjuster
 {    
     internal interface ITextureAdjuster
     {
         public void Init(GameObject root, AutoConfigureTexture config);
         public bool ShouldProcess { get; }
-        public bool Process(TextureInfo info, [NotNullWhen(true)] out AdjustData? data);
+        public bool Process(TextureInfo info, TextureAnalyzer analyzer, [NotNullWhen(true)] out AdjustData? data);
         public void SetValue(TextureConfigurator configurator, AdjustData data);
         public void SetDefaultValue(TextureConfigurator configurator, TextureInfo info);
     }

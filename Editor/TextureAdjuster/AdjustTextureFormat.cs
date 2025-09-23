@@ -1,6 +1,7 @@
+using com.aoyon.AutoConfigureTexture.Analyzer;
 using net.rs64.TexTransTool;
 
-namespace com.aoyon.AutoConfigureTexture
+namespace com.aoyon.AutoConfigureTexture.Adjuster
 {
     internal class AdjustTextureFormat : ITextureAdjuster
     {
@@ -23,15 +24,10 @@ namespace com.aoyon.AutoConfigureTexture
             return;
         }
 
-        public bool Process(TextureInfo info, [NotNullWhen(true)] out AdjustData? data)
+        public bool Process(TextureInfo info, TextureAnalyzer analyzer, [NotNullWhen(true)] out AdjustData? data)
         {
             data = null;
             
-            if (info.Texture is not Texture2D tex)
-            {
-                return false;
-            }
-
             var current = info.Format;
             var format = current;
 
@@ -64,7 +60,7 @@ namespace com.aoyon.AutoConfigureTexture
                             format = TextureFormat.BC7;
                         }
                         else if (mode == FormatMode.Balanced){
-                            format = info.PrimaryUsage == TextureUsage.MainTex 
+                            format = analyzer.PrimaryUsage(info) == TextureUsage.MainTex 
                                 ? TextureFormat.BC7
                                 : TextureFormat.DXT5;
                         }
@@ -132,7 +128,7 @@ namespace com.aoyon.AutoConfigureTexture
                     // Unityはガンマ空間のテクスチャをBC4で解釈しない
                     // よってリニア空間のテクスチャに限りBC4にする
                     // リニア変換するほどではない
-                    if (info.sRGBTexture)
+                    if (info.ImportedInfo?.sRGBTexture ?? true)
                     {
                         format = TextureFormat.DXT1;
                     }
@@ -146,7 +142,7 @@ namespace com.aoyon.AutoConfigureTexture
                 case TextureChannel.B:
                 case TextureChannel.A:
                     format = current;
-                    Debug.LogWarning($"Invalid info: {tex.name} {current} format with {channel} channel");
+                    Debug.LogWarning($"Invalid info: {info.Texture2D.name} {current} format with {channel} channel");
                     break;
                 default:
                     break;

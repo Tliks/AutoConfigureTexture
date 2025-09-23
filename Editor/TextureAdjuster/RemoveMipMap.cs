@@ -1,6 +1,7 @@
+using com.aoyon.AutoConfigureTexture.Analyzer;
 using net.rs64.TexTransTool;
 
-namespace com.aoyon.AutoConfigureTexture
+namespace com.aoyon.AutoConfigureTexture.Adjuster
 {    
     internal class RemoveMipMaps : ITextureAdjuster
     {
@@ -12,7 +13,7 @@ namespace com.aoyon.AutoConfigureTexture
             _shouldProcess = config.OptimizeMipMap;
             return;
         }   
-        public bool Process(TextureInfo info, [NotNullWhen(true)] out AdjustData? data)
+        public bool Process(TextureInfo info, TextureAnalyzer analyzer, [NotNullWhen(true)] out AdjustData? data)
         {
             var shouldRemove = info.Properties.All(p => ShaderSupport.IsVertexShader(p.Shader, p.PropertyName) == true);
             data = AdjustData.Create(shouldRemove);
