@@ -13,6 +13,7 @@
 
 ### Fixed
 - TextureImporterTypeがNormalMapのテクスチャの圧縮形式を変更する際に、アルファが考慮されていない問題を修正。
+- ParticleRendererが誤って処理の対象となっていた問題を修正。
 
 ### Security
 
