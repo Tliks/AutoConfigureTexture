@@ -7,9 +7,9 @@ namespace com.aoyon.AutoConfigureTexture.Analyzer
         private readonly Vector3 _worldViewPos;
         private readonly Dictionary<Renderer, Mesh> _meshes = new Dictionary<Renderer, Mesh>();
 
-        public TextureAreaAnalyzer(Transform root)
+        public TextureAreaAnalyzer(Transform avatarRoot)
         {
-            var descriptor = root.GetComponentInParent<VRCAvatarDescriptor>();
+            var descriptor = avatarRoot.GetComponent<VRCAvatarDescriptor>();
             if (descriptor == null) throw new InvalidOperationException();
             var rootPos = descriptor.transform.position;
             var viewPos = descriptor.ViewPosition;

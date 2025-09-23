@@ -62,7 +62,7 @@ internal static class SetTextureConfigurator
             new AdjustTextureResolution(),
             new RemoveMipMaps()
         };
-        var analyzer = new TextureAnalyzer(component.gameObject);
+        var analyzer = new TextureAnalyzer(avatarRoot.gameObject);
         foreach (var adjuster in adjusters)
         {
             Profiler.BeginSample($"Process {adjuster.GetType().Name}");
