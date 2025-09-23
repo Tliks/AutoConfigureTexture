@@ -15,13 +15,17 @@ internal class TextureInfoCollector // Todo: 追加のマテリアルの参照�
 
         foreach (var renderer in root.GetComponentsInChildren<Renderer>(true))
         {
-            var materials = renderer.sharedMaterials;
-            for (int index = 0; index < materials.Length; index++)
+            // SkinnedMeshRenderer or MeshRendererのみ
+            if (renderer is SkinnedMeshRenderer or MeshRenderer)
             {
-                var material = materials[index];
-                if (material == null) continue;
+                var materials = renderer.sharedMaterials;
+                for (int index = 0; index < materials.Length; index++)
+                {
+                    var material = materials[index];
+                    if (material == null) continue;
 
-                materialInfos.GetOrAdd(material, static (m) => new MaterialInfo(m)).AddReference(renderer, index);
+                    materialInfos.GetOrAdd(material, static (m) => new MaterialInfo(m)).AddReference(renderer, index);
+                }
             }
         }
 
@@ -49,6 +53,7 @@ internal class TextureInfoCollector // Todo: 追加のマテリアルの参照�
                 var texture = material.GetTexture(NameID);
                 if (texture == null) continue;
 
+                // Texture2Dのみ
                 if (texture is not Texture2D texture2d) continue;
 
                 var propertyName = shader.GetPropertyName(i);
