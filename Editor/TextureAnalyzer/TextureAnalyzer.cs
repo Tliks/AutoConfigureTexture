@@ -3,12 +3,14 @@ namespace com.aoyon.AutoConfigureTexture.Analyzer;
 internal class TextureAnalyzer
 {
     private readonly PrimaryUsageAnalyzer _primaryUsageAnalyzer;
-    private readonly TextureAreaAnalyzer _textureAreaAnalyzer;
+    private readonly AlphaAnalyzer _alphaAnalyzer;
+    private readonly DrawingCoordinatesAnalyzer _drawingCoordinatesAnalyzer;
 
     public TextureAnalyzer(GameObject root)
     {
         _primaryUsageAnalyzer = new PrimaryUsageAnalyzer();
-        _textureAreaAnalyzer = new TextureAreaAnalyzer(root.transform);
+        _alphaAnalyzer = new AlphaAnalyzer();
+        _drawingCoordinatesAnalyzer = new DrawingCoordinatesAnalyzer(root.transform);
     }
 
     public TextureUsage PrimaryUsage(TextureInfo textureInfo)
@@ -16,8 +18,13 @@ internal class TextureAnalyzer
         return _primaryUsageAnalyzer.Analyze(textureInfo);
     }
 
-    public bool IsAllAreaUnderHeight(TextureInfo textureInfo, float thresholdRatio)
+    public bool HasAlpha(TextureInfo textureInfo)
     {
-        return _textureAreaAnalyzer.IsAllAreaUnderHeight(textureInfo, thresholdRatio);
+        return _alphaAnalyzer.HasAlpha(textureInfo);
+    }
+
+    public bool IsAllDrawingCoordinatesUnderHeight(TextureInfo textureInfo, float thresholdRatio)
+    {
+        return _drawingCoordinatesAnalyzer.IsAllDrawingCoordinatesUnderHeight(textureInfo, thresholdRatio);
     }
 }

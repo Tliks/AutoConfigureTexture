@@ -1,4 +1,5 @@
 using com.aoyon.AutoConfigureTexture.Analyzer;
+using com.aoyon.AutoConfigureTexture.ShaderInformations;
 using net.rs64.TexTransTool;
 
 namespace com.aoyon.AutoConfigureTexture.Adjuster
@@ -40,7 +41,7 @@ namespace com.aoyon.AutoConfigureTexture.Adjuster
             var currentBPP = MathHelper.FormatToBPP(current);
 
             var channels = info.Properties
-                .Select(propertyInfo => ShaderSupport.GetTextureChannel(propertyInfo.Shader, propertyInfo.PropertyName));
+                .Select(propertyInfo => ShaderInformation.GetTextureChannel(propertyInfo.Shader, propertyInfo.PropertyName));
 
             var channel = channels.Any(c => c.HasFlag(TextureChannel.Unknown))
                 ? TextureChannel.RGBA // 不明な使用用途が一つでもあった場合はRGBAとして処理
@@ -54,7 +55,7 @@ namespace com.aoyon.AutoConfigureTexture.Adjuster
                     {
                         format = current;
                     }
-                    else if (info.HasAlpha)
+                    else if (analyzer.HasAlpha(info))
                     {
                         if (mode == FormatMode.HighQuality){
                             format = TextureFormat.BC7;

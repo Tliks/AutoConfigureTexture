@@ -1,92 +1,9 @@
 using nadena.dev.ndmf;
-using UnityEngine.Rendering;
-using System.Runtime.InteropServices;
 
 namespace com.aoyon.AutoConfigureTexture
 {    
     public class Utils
     {
-        private static Material? s_alphaBinarizationMaterial = null;
-        private static Material AlphaBinarizationMaterial
-        {
-            get
-            {
-                if (s_alphaBinarizationMaterial == null)
-                {
-                    var alphaBinarization = Shader.Find("Hidden/AutoConfigureTexture/AlphaBinarization");
-                    if (alphaBinarization == null)
-                    {
-                        throw new Exception("Shader not found: Hidden/AutoConfigureTexture/AlphaBinarization");
-                    }
-                    s_alphaBinarizationMaterial = new Material(alphaBinarization);
-                }
-                return s_alphaBinarizationMaterial;
-            }
-        }
-
-        public static bool HasAlphaWithBinarization(Texture texture)
-        {
-            var temp = RenderTexture.GetTemporary(32, 32, 0, RenderTextureFormat.R8);
-            var active = RenderTexture.active;
-            try
-            {
-                Graphics.Blit(texture, temp, AlphaBinarizationMaterial);
-                var request = AsyncGPUReadback.Request(temp, 0, TextureFormat.R8);
-                request.WaitForCompletion();
-
-                using var data = request.GetData<byte>();
-                var span = MemoryMarshal.Cast<byte, ulong>(data.AsReadOnlySpan());
-                const ulong AllBitSets = unchecked((ulong)-1); // 0xFF_FF_FF_FF_FF_FF_FF_FF
-                for (int i = 0; i < span.Length; i++)
-                {
-                    var x = span[i];
-                    //Debug.LogError($"{i} => {Convert.ToString((long)x, 16).ToUpper().PadLeft(16, '0')}");
-                    if (x - AllBitSets != 0)
-                    {
-                        return true;
-                    }
-                }
-
-                return false;
-            }
-            finally
-            {
-                RenderTexture.active = active;
-                RenderTexture.ReleaseTemporary(temp);
-            }
-        }
- 
-        public static bool HasAlphaInData(Texture2D readableTexture)
-        {
-            var span = readableTexture.GetRawTextureData<Color32>().AsReadOnlySpan();
-
-            bool hasAlpha = false;
-            for (int i = 0; span.Length > i; i += 1)
-            {
-                if (span[i].a != 255 && span[i].a != 254)
-                {
-                    return true;
-                }
-            }
-            return hasAlpha;
-        }
-
-        public static bool HasAlphaInMipMap(Texture2D readableTexture)
-        {
-            if (readableTexture.mipmapCount > 1)
-            {
-                var pixels = readableTexture.GetPixels32(readableTexture.mipmapCount - 1);
-                for (int i = 0; pixels.Length > i; i += 1)
-                {
-                    if (pixels[i].a != 255)
-                    {
-                        return true;
-                    }
-                }
-            }
-            throw new Exception();
-        }
-
         public static Texture2D EnsureReadableTexture2D(Texture2D texture2d)
         {
             if (texture2d.isReadable)

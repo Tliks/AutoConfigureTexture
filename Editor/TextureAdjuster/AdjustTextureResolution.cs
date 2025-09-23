@@ -153,7 +153,7 @@ namespace com.aoyon.AutoConfigureTexture.Adjuster
                 if (currentValue <= minimum)
                     return;
 
-                if (analyzer.IsAllAreaUnderHeight(info, thresholdRatio))
+                if (analyzer.IsAllDrawingCoordinatesUnderHeight(info, thresholdRatio))
                     currentValue = Mathf.Max(currentValue / divisor, minimum);
             }
         }

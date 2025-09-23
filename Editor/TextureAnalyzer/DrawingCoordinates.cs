@@ -2,21 +2,21 @@ using VRC.SDK3.Avatars.Components;
 
 namespace com.aoyon.AutoConfigureTexture.Analyzer
 {
-    internal class TextureAreaAnalyzer
+    internal class DrawingCoordinatesAnalyzer
     {
         private readonly Vector3 _worldViewPos;
         private readonly Dictionary<Renderer, Mesh> _meshes = new Dictionary<Renderer, Mesh>();
 
-        public TextureAreaAnalyzer(Transform avatarRoot)
+        public DrawingCoordinatesAnalyzer(Transform avatarRoot)
         {
-            var descriptor = avatarRoot.GetComponent<VRCAvatarDescriptor>();
+            var descriptor = avatarRoot.GetComponent<VRCAvatarDescriptor>(); // Todo: VRC非依存でアバターの高さを取得する
             if (descriptor == null) throw new InvalidOperationException();
             var rootPos = descriptor.transform.position;
             var viewPos = descriptor.ViewPosition;
             _worldViewPos = rootPos + viewPos;
         }
 
-        public bool IsAllAreaUnderHeight(TextureInfo textureInfo, float thresholdRatio)
+        public bool IsAllDrawingCoordinatesUnderHeight(TextureInfo textureInfo, float thresholdRatio)
         {
             var height = _worldViewPos.y * thresholdRatio;
 

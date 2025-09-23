@@ -1,5 +1,3 @@
-using UnityEngine.Experimental.Rendering;
-
 namespace com.aoyon.AutoConfigureTexture;
 
 /// <summary>
@@ -14,16 +12,6 @@ internal class TextureInfo
     public IReadOnlyList<PropertyInfo> Properties => _properties;
 
     public readonly TextureImportedInfo? ImportedInfo;
-
-    private bool? _hasAlpha = null;
-    public bool HasAlpha
-    {
-        get
-        {
-            _hasAlpha ??= CheckHasAlpha();
-            return _hasAlpha.Value;
-        }
-    }
 
     private Texture2D? _readableTexture = null;
     public Texture2D ReadableTexture => EnsureReadableTexture2D();
@@ -53,34 +41,6 @@ internal class TextureInfo
             _readableTexture = Utils.EnsureReadableTexture2D(Texture2D);
         }
         return _readableTexture;
-    }
-
-    private bool CheckHasAlpha()
-    {
-        Profiler.BeginSample("HasAlpha");
-        if (_hasAlpha == null)
-        {
-            if (GraphicsFormatUtility.HasAlphaChannel(Format))
-            {
-                Profiler.BeginSample("HasAlphaImpl");
-                try
-                {
-                    _hasAlpha = Utils.HasAlphaWithBinarization(Texture2D);
-                }
-                catch (Exception e)
-                {
-                    Debug.LogError($"Failed to check alpha channel: {e.Message}");
-                    _hasAlpha = true;
-                }
-                Profiler.EndSample();
-            }
-            else
-            {
-                _hasAlpha = false;
-            }
-        }
-        Profiler.EndSample();
-        return _hasAlpha.Value;
     }
 }
 

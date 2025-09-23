@@ -1,4 +1,5 @@
 using com.aoyon.AutoConfigureTexture.Analyzer;
+using com.aoyon.AutoConfigureTexture.ShaderInformations;
 using net.rs64.TexTransTool;
 
 namespace com.aoyon.AutoConfigureTexture.Adjuster
@@ -15,7 +16,7 @@ namespace com.aoyon.AutoConfigureTexture.Adjuster
         }   
         public bool Process(TextureInfo info, TextureAnalyzer analyzer, [NotNullWhen(true)] out AdjustData? data)
         {
-            var shouldRemove = info.Properties.All(p => ShaderSupport.IsVertexShader(p.Shader, p.PropertyName) == true);
+            var shouldRemove = info.Properties.All(p => ShaderInformation.IsVertexShader(p.Shader, p.PropertyName) == true);
             data = AdjustData.Create(shouldRemove);
             return shouldRemove;
         }

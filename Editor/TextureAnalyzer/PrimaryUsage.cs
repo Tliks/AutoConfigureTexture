@@ -1,4 +1,6 @@
-namespace com.aoyon.AutoConfigureTexture;
+using com.aoyon.AutoConfigureTexture.ShaderInformations;
+
+namespace com.aoyon.AutoConfigureTexture.Analyzer;
 
 internal class PrimaryUsageAnalyzer
 {
@@ -15,7 +17,7 @@ internal class PrimaryUsageAnalyzer
     public TextureUsage Analyze(TextureInfo textureInfo)
     {
         var usages = textureInfo.Properties
-            .Select(info => ShaderSupport.GetTextureUsage(info.Shader, info.PropertyName));
+            .Select(info => ShaderInformation.GetTextureUsage(info.Shader, info.PropertyName));
             
         // 不明プロパティが1つでも含まれる場合
         if (usages.Any(u => u == TextureUsage.Unknown))
