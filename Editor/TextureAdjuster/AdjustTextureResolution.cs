@@ -36,6 +36,9 @@ namespace com.aoyon.AutoConfigureTexture.Adjuster
         {
             data = null;
 
+            var score = analyzer.ComputeResolutionReductionScore(info, null, 0.5f);
+            Debug.Log($"Resolution Reduction Score: {score} for {info.Texture2D.name}");
+
             var propertyInfos = info.Properties;
 
             int width = info.Texture2D.width;

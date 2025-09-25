@@ -1,0 +1,132 @@
+#pragma kernel CSMain
+#pragma kernel ReducePass
+
+// Inputs
+Texture2D<float4> _SrcTex;
+Texture2D<float> _MaskTex; // optional; if not set, weight=1
+SamplerState sampler_LinearClamp;
+
+// Params
+int _MipLevel;
+int _Window;    // odd
+int _Stride;    // >=1
+int2 _TexSize;  // src size (LOD0)
+
+// Output (stage1 per-cell)
+RWStructuredBuffer<float2> _Partial; // x: sum(d*mw), y: sum(mw), length = _OutSize.x * _OutSize.y
+int2 _OutSize;
+
+static float Luma(float3 c)
+{
+    return dot(c, float3(0.2126, 0.7152, 0.0722));
+}
+
+[numthreads(8,8,1)]
+void CSMain(uint3 id : SV_DispatchThreadID)
+{
+    int2 grid = int2(id.xy);
+    if (grid.x >= _OutSize.x || grid.y >= _OutSize.y) return;
+
+    // Center pixel in source space for this cell
+    int r = max(1, _Window / 2);
+    int2 p = grid * _Stride + int2(r, r);
+    p.x = min(max(p.x, r), _TexSize.x - 1 - r);
+    p.y = min(max(p.y, r), _TexSize.y - 1 - r);
+
+    float2 invTex = 1.0 / float2(_TexSize);
+    float2 uvCenter = (float2(p) + 0.5) * invTex;
+
+    // mask weight at center (optional)
+    float mw = 1.0;
+    int maskW = 0, maskH = 0; _MaskTex.GetDimensions(maskW, maskH);
+    if (maskW > 0 && maskH > 0)
+    {
+        mw = _MaskTex.SampleLevel(sampler_LinearClamp, uvCenter, 0).r;
+        if (mw <= 0.0)
+        {
+            int idx0 = grid.y * _OutSize.x + grid.x;
+            _Partial[idx0] = float2(0.0, 0.0);
+            return;
+        }
+    }
+
+    // Local stats on Y for I(LOD0) and I_sim (sample LOD=_MipLevel)
+    int count = 0;
+    float meanA = 0.0;
+    float meanB = 0.0;
+
+    for (int j = -r; j <= r; j++)
+    {
+        for (int i = -r; i <= r; i++)
+        {
+            int2 q = p + int2(i, j);
+            float2 uv = (float2(q) + 0.5) * invTex;
+            float Ya = Luma(_SrcTex.SampleLevel(sampler_LinearClamp, uv, 0).rgb);
+            float Yb = Luma(_SrcTex.SampleLevel(sampler_LinearClamp, uv, _MipLevel).rgb);
+            meanA += Ya;
+            meanB += Yb;
+            count++;
+        }
+    }
+
+    meanA /= max(1, count);
+    meanB /= max(1, count);
+
+    float varA = 0.0;
+    float varB = 0.0;
+    float covAB = 0.0;
+    for (int j = -r; j <= r; j++)
+    {
+        for (int i = -r; i <= r; i++)
+        {
+            int2 q = p + int2(i, j);
+            float2 uv = (float2(q) + 0.5) * invTex;
+            float Ya = Luma(_SrcTex.SampleLevel(sampler_LinearClamp, uv, 0).rgb);
+            float Yb = Luma(_SrcTex.SampleLevel(sampler_LinearClamp, uv, _MipLevel).rgb);
+            float da = Ya - meanA;
+            float db = Yb - meanB;
+            varA += da * da;
+            varB += db * db;
+            covAB += da * db;
+        }
+    }
+
+    varA /= max(1, count - 1);
+    varB /= max(1, count - 1);
+    covAB /= max(1, count - 1);
+
+    const float K1 = 0.01;
+    const float K2 = 0.03;
+    const float Lmax = 1.0;
+    float C1 = (K1 * Lmax) * (K1 * Lmax);
+    float C2 = (K2 * Lmax) * (K2 * Lmax);
+
+    float ssim = ((2.0 * meanA * meanB + C1) * (2.0 * covAB + C2)) /
+                 ((meanA * meanA + meanB * meanB + C1) * (varA + varB + C2) + 1e-6);
+    float d = saturate(1.0 - ssim);
+
+    int idx = grid.y * _OutSize.x + grid.x;
+    _Partial[idx] = float2(d * mw, mw);
+}
+
+// Reduction: sum blocks of size _ReduceStride from _In to _OutBuf
+StructuredBuffer<float2> _In;
+RWStructuredBuffer<float2> _OutBuf;
+int _CountIn;
+int _ReduceStride; // e.g., 1024
+
+[numthreads(256,1,1)]
+void ReducePass(uint3 id : SV_DispatchThreadID)
+{
+    uint i = id.x;
+    uint outCount = (_CountIn + _ReduceStride - 1) / _ReduceStride;
+    if (i >= outCount) return;
+    uint start = i * _ReduceStride;
+    uint endv = min(_CountIn, start + _ReduceStride);
+    float2 acc = 0;
+    for (uint k = start; k < endv; k++)
+    {
+        acc += _In[k];
+    }
+    _OutBuf[i] = acc;
+}

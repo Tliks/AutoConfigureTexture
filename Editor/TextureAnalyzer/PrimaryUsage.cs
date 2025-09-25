@@ -4,6 +4,7 @@ namespace com.aoyon.AutoConfigureTexture.Analyzer;
 
 internal class PrimaryUsageAnalyzer
 {
+    private readonly Dictionary<TextureInfo, TextureUsage> _cache = new();
     private static readonly TextureUsage[] s_usages = 
     {
         TextureUsage.MainTex,
@@ -16,6 +17,11 @@ internal class PrimaryUsageAnalyzer
     };
     public TextureUsage Analyze(TextureInfo textureInfo)
     {
+        if (_cache.TryGetValue(textureInfo, out var usage))
+        {
+            return usage;
+        }
+
         var usages = textureInfo.Properties
             .Select(info => ShaderInformation.GetTextureUsage(info.Shader, info.PropertyName));
             
@@ -24,20 +30,23 @@ internal class PrimaryUsageAnalyzer
         {
             return TextureUsage.Unknown;
         }
-        return GetPrimaryUsage(usages);
+        usage = GetPrimaryUsage(usages);
+        _cache[textureInfo] = usage;
+        return usage;
 
-        // primaryでない使用用途を全て無視しているのでもう少し良い取り扱い方はしたい
-        // MainTex > NormalMap > Emission > AOMap > NormalMapSub > Others > MatCap
-        static TextureUsage GetPrimaryUsage(IEnumerable<TextureUsage> usages)
+    }
+
+    // primaryでない使用用途を全て無視しているのでもう少し良い取り扱い方はしたい
+    // MainTex > NormalMap > Emission > AOMap > NormalMapSub > Others > MatCap
+    private static TextureUsage GetPrimaryUsage(IEnumerable<TextureUsage> usages)
+    {
+        foreach (var usage in s_usages)
         {
-            foreach (var usage in s_usages)
+            if (usages.Contains(usage))
             {
-                if (usages.Contains(usage))
-                {
-                    return usage;
-                }
+                return usage;
             }
-            throw new InvalidOperationException();
         }
+        throw new InvalidOperationException();
     }
 }
