@@ -3,7 +3,7 @@
 
 // Inputs
 Texture2D<float4> _SrcTex;
-Texture2D<float> _MaskTex; // optional; if not set, weight=1
+Texture2D<float4> _MaskTex; // optional; if not set, weight=1
 SamplerState sampler_LinearClamp;
 
 // Params

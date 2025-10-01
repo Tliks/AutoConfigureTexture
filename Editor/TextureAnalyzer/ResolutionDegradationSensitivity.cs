@@ -61,7 +61,16 @@ internal class ResolutionDegradationSensitivityAnalyzer
 		if (textureInfo.Texture2D == null) throw new System.ArgumentException("Texture2D is null");
 		if (!(scale > 0f && scale < 1f)) return 0f;
 
-		return ComputeSSIM_GPU(textureInfo, mask, scale, windowSize, stride);
+		if (SystemInfo.supportsComputeShaders)
+		{
+			// return ComputeSSIM_GPU(textureInfo, mask, scale, windowSize, stride);
+			return 0f;
+		}
+		else
+		{
+			Debug.LogWarning("ComputeShader not supported");
+			return 0f;
+		}
 	}
 
 	private float ComputeSSIM_GPU(TextureInfo textureInfo, Texture2D? mask, float scale, int windowSize, int stride)
@@ -92,7 +101,8 @@ internal class ResolutionDegradationSensitivityAnalyzer
 		int outCount = outW * outH;
 
 		var partial = new ComputeBuffer(outCount, sizeof(float) * 2);
-		var reduceA = new ComputeBuffer(Mathf.CeilToInt(outCount / 1024f), sizeof(float) * 2);
+		int outCountReduce = Mathf.CeilToInt(outCount / 1024f);
+		var reduceA = new ComputeBuffer(outCountReduce, sizeof(float) * 2);
 		try
 		{
 			shader.SetTexture(kernel, "_SrcTex", src);
@@ -116,10 +126,13 @@ internal class ResolutionDegradationSensitivityAnalyzer
 			shader.SetBuffer(reduceKernel, "_OutBuf", reduceA);
 			shader.SetInt("_CountIn", outCount);
 			shader.SetInt("_ReduceStride", 1024);
-			shader.Dispatch(reduceKernel, Mathf.CeilToInt(outCount / 1024f), 1, 1);
+			uint rtx, rty, rtz;
+			shader.GetKernelThreadGroupSizes(reduceKernel, out rtx, out rty, out rtz);
+			int rgx = Mathf.CeilToInt(outCountReduce / (float)rtx);
+			shader.Dispatch(reduceKernel, Mathf.Max(1, rgx), 1, 1);
 
 			// 最終読み戻し（小バッファ）
-			var arr = new Vector2[Mathf.CeilToInt(outCount / 1024f)];
+			var arr = new Vector2[outCountReduce];
 			reduceA.GetData(arr);
 			float sumD = 0f, sumW = 0f;
 			for (int i = 0; i < arr.Length; i++) { sumD += arr[i].x; sumW += arr[i].y; }
