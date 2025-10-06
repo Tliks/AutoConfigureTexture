@@ -21,9 +21,8 @@ internal class ResolutionDegradationSensitivityAnalyzer
         Texture2D? usageMask,
         float scale)
     {
-        ValidatePow2Scale(textureInfo.Texture2D, scale);
-        return ComputeResolutionImpactSSIM(textureInfo, usageMask, scale, windowSize: 11, stride: 2);
-        switch (usage)
+		ValidatePow2Scale(textureInfo.Texture2D, scale);
+		switch (usage)
         {
             case TextureUsage.NormalMap:
             case TextureUsage.NormalMapSub:
@@ -63,8 +62,7 @@ internal class ResolutionDegradationSensitivityAnalyzer
 
 		if (SystemInfo.supportsComputeShaders)
 		{
-			// return ComputeSSIM_GPU(textureInfo, mask, scale, windowSize, stride);
-			return 0f;
+			return ComputeSSIM_GPU(textureInfo, mask, scale, windowSize, stride);
 		}
 		else
 		{
@@ -206,6 +204,45 @@ internal class ResolutionDegradationSensitivityAnalyzer
 			if (simTex != null)
 			{
 				UnityEngine.Object.DestroyImmediate(simTex);
+			}
+		}
+	}
+
+	/// <summary>
+	/// アイランド単位の劣化スコア（Usageに応じてSSIM/Normal角度誤差）を計算するユーティリティ。
+	/// 内部で島マスクTextureを生成し、既存のマスク対応APIを用いて評価する（ROIはマスクで近似）。
+	/// </summary>
+	public float ComputeResolutionImpactForIsland(
+		TextureInfo textureInfo,
+		TextureUsage usage,
+		IslandAnalyzer.Island island,
+		IslandMaskService maskService,
+		float scale,
+		int windowSize = 11,
+		int stride = 2)
+	{
+		if (textureInfo == null) throw new System.ArgumentNullException(nameof(textureInfo));
+		if (textureInfo.Texture2D == null) throw new System.ArgumentException("Texture2D is null");
+		if (!(scale > 0f && scale < 1f)) return 0f;
+
+		Texture2D? maskTex = null;
+		try
+		{
+			maskTex = maskService.BuildIslandMaskTexture(textureInfo.Texture2D, island);
+			switch (usage)
+			{
+				case TextureUsage.NormalMap:
+				case TextureUsage.NormalMapSub:
+					return ComputeResolutionImpactNormal(textureInfo, maskTex, scale);
+				default:
+					return ComputeResolutionImpactSSIM(textureInfo, maskTex, scale, windowSize, stride);
+			}
+		}
+		finally
+		{
+			if (maskTex != null)
+			{
+				UnityEngine.Object.DestroyImmediate(maskTex);
 			}
 		}
 	}
