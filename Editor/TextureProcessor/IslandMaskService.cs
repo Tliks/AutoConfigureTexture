@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering;
 
-namespace com.aoyon.AutoConfigureTexture.Analyzer;
+namespace com.aoyon.AutoConfigureTexture.Processor;
 
 /// <summary>
 /// UVアイランドを R8 マスクにGPU描画するユーティリティ。

@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace com.aoyon.AutoConfigureTexture.Analyzer;
+namespace com.aoyon.AutoConfigureTexture.Processor;
 
 /// <summary>
 /// 単一パラメータ q∈[0,1] から T(q), B(q), F(q) を導出し、

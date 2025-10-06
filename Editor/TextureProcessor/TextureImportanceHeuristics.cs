@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace com.aoyon.AutoConfigureTexture.Analyzer;
+namespace com.aoyon.AutoConfigureTexture.Processor;
 
 /// <summary>
 /// テクスチャ重要度の簡易ヒューリスティック（0..1）。

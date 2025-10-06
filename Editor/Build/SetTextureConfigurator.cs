@@ -2,8 +2,8 @@ using net.rs64.TexTransTool;
 using nadena.dev.ndmf;
 using nadena.dev.ndmf.runtime;
 using net.rs64.TexTransTool.TextureAtlas;
-using com.aoyon.AutoConfigureTexture.Adjuster;
-using com.aoyon.AutoConfigureTexture.Analyzer;
+using com.aoyon.AutoConfigureTexture.Build;
+using com.aoyon.AutoConfigureTexture.Processor;
 
 namespace com.aoyon.AutoConfigureTexture.Build;
 

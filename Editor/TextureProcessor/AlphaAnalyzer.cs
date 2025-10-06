@@ -2,7 +2,7 @@ using System.Runtime.InteropServices;
 using UnityEngine.Experimental.Rendering;
 using UnityEngine.Rendering;
 
-namespace com.aoyon.AutoConfigureTexture.Analyzer;
+namespace com.aoyon.AutoConfigureTexture.Processor;
 
 internal class AlphaAnalyzer
 {

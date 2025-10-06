@@ -1,8 +1,8 @@
-using com.aoyon.AutoConfigureTexture.Analyzer;
+using com.aoyon.AutoConfigureTexture.Processor;
 using com.aoyon.AutoConfigureTexture.ShaderInformations;
 using net.rs64.TexTransTool;
 
-namespace com.aoyon.AutoConfigureTexture.Adjuster
+namespace com.aoyon.AutoConfigureTexture.Build
 {    
     internal class RemoveMipMaps : ITextureAdjuster
     {

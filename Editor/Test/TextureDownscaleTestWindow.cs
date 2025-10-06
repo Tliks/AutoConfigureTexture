@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
-using com.aoyon.AutoConfigureTexture.Analyzer;
+using com.aoyon.AutoConfigureTexture.Processor;
 
 
 namespace com.aoyon.AutoConfigureTexture;

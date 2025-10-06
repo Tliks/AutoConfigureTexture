@@ -1,6 +1,6 @@
 using VRC.SDK3.Avatars.Components;
 
-namespace com.aoyon.AutoConfigureTexture.Analyzer
+namespace com.aoyon.AutoConfigureTexture.Processor
 {
     internal class DrawingCoordinatesAnalyzer
     {

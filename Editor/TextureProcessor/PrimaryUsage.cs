@@ -1,6 +1,6 @@
 using com.aoyon.AutoConfigureTexture.ShaderInformations;
 
-namespace com.aoyon.AutoConfigureTexture.Analyzer;
+namespace com.aoyon.AutoConfigureTexture.Processor;
 
 internal class PrimaryUsageAnalyzer
 {

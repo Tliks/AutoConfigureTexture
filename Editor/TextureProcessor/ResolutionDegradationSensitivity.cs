@@ -1,6 +1,6 @@
 using UnityEngine.Rendering;
 
-namespace com.aoyon.AutoConfigureTexture.Analyzer;
+namespace com.aoyon.AutoConfigureTexture.Processor;
 
 internal class ResolutionDegradationSensitivityAnalyzer
 {

@@ -1,7 +1,7 @@
-using com.aoyon.AutoConfigureTexture.Analyzer;
+using com.aoyon.AutoConfigureTexture.Processor;
 using net.rs64.TexTransTool;
 
-namespace com.aoyon.AutoConfigureTexture.Adjuster
+namespace com.aoyon.AutoConfigureTexture.Build
 {    
     internal class AdjustTextureResolution : ITextureAdjuster
     {
