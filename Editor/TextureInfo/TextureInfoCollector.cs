@@ -1,7 +1,11 @@
 namespace com.aoyon.AutoConfigureTexture;
 
-internal class TextureInfoCollector // Todo: 追加のマテリアルの参照を考慮する？
+internal class TextureInfoCollector 
 {
+    public TextureInfoCollector() // Todo: 追加のマテリアルの参照を考慮する？
+    {
+    }
+
     public IEnumerable<TextureInfo> Execute(GameObject root)
     {
         var materialInfos = CollectMaterialInfos(root);

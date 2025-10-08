@@ -1,12 +1,16 @@
 {
     "name": "com.aoyon.AutoConfigureTexture.runtime",
     "rootNamespace": "",
-    "references": [],
+    "references": [
+        "nadena.dev.ndmf.runtime"
+    ],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
-    "overrideReferences": false,
-    "precompiledReferences": [],
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "VRCSDKBase.dll"
+    ],
     "autoReferenced": false,
     "defineConstraints": [],
     "versionDefines": [],

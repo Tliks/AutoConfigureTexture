@@ -22,10 +22,15 @@ internal sealed class TextureScaleDecider
 		public float SelectedScale; // 1.0 if unchanged
 		public long SavedBytes;
 		public string Reason;
+
+		public override string ToString()
+		{
+			return $"Texture: {Texture?.name ?? "null"}, SelectedScale: {SelectedScale}, SavedBytes: {SavedBytes}, Reason: {Reason}";
+		}
 	}
 
 	public IReadOnlyList<Result> Decide(
-		IReadOnlyList<(TextureInfo info, TextureUsage usage, Mesh mesh, int subMesh, int uvChannel)> items,
+		IReadOnlyList<TextureInfo> items,
 		float q)
 	{
 		// q→内部パラメータ
@@ -36,14 +41,30 @@ internal sealed class TextureScaleDecider
 		// 各テクスチャごとに island→D_j(s) を計算し、許容集合 S_j^ok を作る
 		var perTex = new List<(TextureInfo info, TextureUsage usage, float w, Dictionary<float, float> DjByScale, float sMax, long savedMax)>();
 		long totalBytes = 0;
-		foreach (var (info, usage, mesh, sub, uv) in items)
+		foreach (var info in items)
 		{
+			var usage = PrimaryUsageAnalyzer.Analyze(info);
+
 			var tex = info.Texture2D;
 			long bytes = EstimateSizeBytes(tex);
 			totalBytes += bytes;
 			float w = TextureImportanceHeuristics.Compute(info, usage);
 
-			var islands = _islandAnalyzer.GetIslands(mesh, sub, uv);
+			var islands = new List<Island>();
+			foreach (var property in info.Properties)
+			{
+				var uv = property.UVchannel;
+				var materialInfo = property.MaterialInfo;
+				foreach (var (renderer, indices) in materialInfo.Renderers)
+				{
+					var mesh = Utils.GetMesh(renderer);
+					if (mesh == null) continue;
+					foreach (var index in indices)
+					{
+						islands.AddRange(_islandAnalyzer.GetIslands(mesh, index, uv));
+					}
+				}
+			}
 			var DjByScale = new Dictionary<float, float>();
 			float sMax = 1.0f;
 			long savedMax = 0;
@@ -65,6 +86,8 @@ internal sealed class TextureScaleDecider
 			}
 			perTex.Add((info, usage, w, DjByScale, sMax, savedMax));
 		}
+
+		return null;
 
 		// 品質内での最大候補合計
 		long potentialSaved = 0;

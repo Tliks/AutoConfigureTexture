@@ -27,7 +27,7 @@ internal sealed class IslandMaskService
 		}
 	}
 
-	public RenderTexture BuildIslandMaskRT(Texture2D src, IslandAnalyzer.Island island)
+	public RenderTexture BuildIslandMaskRT(Texture2D src, Island island)
 	{
 		int triCount = island.TriangleIndices.Count;
 		if (triCount == 0)
@@ -56,7 +56,7 @@ internal sealed class IslandMaskService
 		return rt;
 	}
 
-	public Texture2D BuildIslandMaskTexture(Texture2D src, IslandAnalyzer.Island island)
+	public Texture2D BuildIslandMaskTexture(Texture2D src, Island island)
 	{
 		var rt = BuildIslandMaskRT(src, island);
 		var prev = RenderTexture.active;
@@ -79,7 +79,7 @@ internal sealed class IslandMaskService
 		}
 	}
 
-	private static Mesh BuildIslandMesh(IslandAnalyzer.Island island)
+	private static Mesh BuildIslandMesh(Island island)
 	{
 		var tris = island.Triangles;
 		var uvs = island.UVs;

@@ -1,6 +1,3 @@
-using System.Collections.Generic;
-using UnityEngine;
-
 namespace com.aoyon.AutoConfigureTexture.Processor;
 
 internal class TextureAnalyzer
@@ -22,7 +19,7 @@ internal class TextureAnalyzer
 
     public TextureUsage PrimaryUsage(TextureInfo textureInfo)
     {
-        return _primaryUsageAnalyzer.Analyze(textureInfo);
+        return PrimaryUsageAnalyzer.Analyze(textureInfo);
     }
 
     public bool HasAlpha(TextureInfo textureInfo)
@@ -35,7 +32,7 @@ internal class TextureAnalyzer
         return _drawingCoordinatesAnalyzer.IsAllDrawingCoordinatesUnderHeight(textureInfo, thresholdRatio);
     }
 
-    public List<IslandAnalyzer.Island> GetIslands(Mesh mesh, int subMeshIndex, int uvChannel)
+    public List<Island> GetIslands(Mesh mesh, int subMeshIndex, int uvChannel)
     {
         return _islandAnalyzer.GetIslands(mesh, subMeshIndex, uvChannel);
     }

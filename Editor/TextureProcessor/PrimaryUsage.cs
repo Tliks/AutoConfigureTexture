@@ -4,7 +4,6 @@ namespace com.aoyon.AutoConfigureTexture.Processor;
 
 internal class PrimaryUsageAnalyzer
 {
-    private readonly Dictionary<TextureInfo, TextureUsage> _cache = new();
     private static readonly TextureUsage[] s_usages = 
     {
         TextureUsage.MainTex,
@@ -15,13 +14,8 @@ internal class PrimaryUsageAnalyzer
         TextureUsage.Emission,
         TextureUsage.Others,
     };
-    public TextureUsage Analyze(TextureInfo textureInfo)
+    public static TextureUsage Analyze(TextureInfo textureInfo)
     {
-        if (_cache.TryGetValue(textureInfo, out var usage))
-        {
-            return usage;
-        }
-
         var usages = textureInfo.Properties
             .Select(info => ShaderInformation.GetTextureUsage(info.Shader, info.PropertyName));
             
@@ -30,10 +24,8 @@ internal class PrimaryUsageAnalyzer
         {
             return TextureUsage.Unknown;
         }
-        usage = GetPrimaryUsage(usages);
-        _cache[textureInfo] = usage;
+        var usage = GetPrimaryUsage(usages);
         return usage;
-
     }
 
     // primaryでない使用用途を全て無視しているのでもう少し良い取り扱い方はしたい

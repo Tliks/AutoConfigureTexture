@@ -1,5 +1,26 @@
 namespace com.aoyon.AutoConfigureTexture.Processor;
 
+public class Island
+{
+    public readonly Vector3[] Vertices;
+    public readonly Vector2[] UVs;
+    public readonly int[] Triangles;
+
+    public readonly List<int> TriangleIndices = new();
+    
+    public Island(Vector3[] vertices, Vector2[] uvs, int[] triangles)
+    {
+        Vertices = vertices;
+        UVs = uvs;
+        Triangles = triangles;
+    }
+
+    public void AddTriangleIndex(int triangleIndex)
+    {
+        TriangleIndices.Add(triangleIndex);
+    }
+}
+
 internal class IslandAnalyzer
 {
     private readonly Dictionary<(Mesh, int, int), List<Island>> cache = new();
@@ -77,27 +98,6 @@ internal class IslandAnalyzer
         Profiler.EndSample();
 
         return new List<Island>(islandDict.Values);
-    }
-
-    public class Island
-    {
-        public readonly Vector3[] Vertices;
-        public readonly Vector2[] UVs;
-        public readonly int[] Triangles;
-
-        public readonly List<int> TriangleIndices = new();
-        
-        public Island(Vector3[] vertices, Vector2[] uvs, int[] triangles)
-        {
-            Vertices = vertices;
-            UVs = uvs;
-            Triangles = triangles;
-        }
-
-        public void AddTriangleIndex(int triangleIndex)
-        {
-            TriangleIndices.Add(triangleIndex);
-        }
     }
     
     class UnionFind

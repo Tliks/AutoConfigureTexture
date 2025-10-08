@@ -215,7 +215,7 @@ internal class ResolutionDegradationSensitivityAnalyzer
 	public float ComputeResolutionImpactForIsland(
 		TextureInfo textureInfo,
 		TextureUsage usage,
-		IslandAnalyzer.Island island,
+		Island island,
 		IslandMaskService maskService,
 		float scale,
 		int windowSize = 11,
@@ -228,7 +228,9 @@ internal class ResolutionDegradationSensitivityAnalyzer
 		Texture2D? maskTex = null;
 		try
 		{
-			maskTex = maskService.BuildIslandMaskTexture(textureInfo.Texture2D, island);
+			// maskTex = maskService.BuildIslandMaskTexture(textureInfo.Texture2D, island);
+			maskTex = GetWhiteMask();
+			return ComputeResolutionImpactSSIM(textureInfo, maskTex, scale, windowSize, stride); // テスト
 			switch (usage)
 			{
 				case TextureUsage.NormalMap:

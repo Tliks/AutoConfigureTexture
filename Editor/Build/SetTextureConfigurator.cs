@@ -7,6 +7,7 @@ using com.aoyon.AutoConfigureTexture.Processor;
 
 namespace com.aoyon.AutoConfigureTexture.Build;
 
+/*
 internal static class SetTextureConfigurator
 {
     public static GameObject? Apply(AutoConfigureTexture component)
@@ -115,23 +116,5 @@ internal static class SetTextureConfigurator
         }
         return configurators;
     }
-
-    private static void ProcessAdjuster(ITextureAdjuster adjuster, TextureAnalyzer analyzer, IEnumerable<(TextureInfo, TextureConfigurator)> targets, GameObject root, AutoConfigureTexture config)
-    {
-        var infos = targets.Select(x => x.Item1);
-
-        adjuster.Init(root, config);
-
-        foreach (var (info, configurator) in targets)
-        {
-            if (adjuster.ShouldProcess && adjuster.Process(info, analyzer, out var data))
-            {
-                adjuster.SetValue(configurator, data);
-            }
-            else
-            {
-                adjuster.SetDefaultValue(configurator, info);
-            }
-        }
-    }
 }
+*/
