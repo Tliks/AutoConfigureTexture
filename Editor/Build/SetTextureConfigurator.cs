@@ -95,7 +95,6 @@ internal static class SetTextureConfigurator
 
             // Texture2D以外は現状何もしない
             if (texture is not Texture2D tex2d) continue;
-            if (info.ImportedInfo?.TextureImporterType != TextureImporterType.Default) continue;
             // TextureConfiguratorは正方形のみ(多分)
             if (texture.width != texture.height) continue;
             // 既存の設定がある場合除外
