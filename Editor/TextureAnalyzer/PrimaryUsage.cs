@@ -20,10 +20,10 @@ internal class PrimaryUsageAnalyzer
             .Select(info => ShaderInformation.GetTextureUsage(info.Shader, info.PropertyName));
             
         // 不明プロパティが1つでも含まれる場合
-        if (usages.Any(u => u == TextureUsage.Unknown))
-        {
-            return TextureUsage.Unknown;
-        }
+        // if (usages.Any(u => u == TextureUsage.Unknown))
+        // {
+        //    return TextureUsage.Unknown;
+        // }
         return GetPrimaryUsage(usages);
 
         // primaryでない使用用途を全て無視しているのでもう少し良い取り扱い方はしたい

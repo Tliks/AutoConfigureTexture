@@ -45,13 +45,13 @@ namespace com.aoyon.AutoConfigureTexture.Adjuster
             if (reduction == Reduction.None)
                 return false;
 
-            var usage = analyzer.PrimaryUsage(info);
-            if (usage == TextureUsage.Unknown)
-                return false;
+            var primaryusage = analyzer.PrimaryUsage(info);
+            // if (primaryusage == TextureUsage.Unknown)
+            //    return false;
 
             if (reduction == Reduction.Low)
             {
-                switch (usage)
+                switch (primaryusage)
                 {   
                     case TextureUsage.MainTex:
                     case TextureUsage.NormalMap:
@@ -69,7 +69,7 @@ namespace com.aoyon.AutoConfigureTexture.Adjuster
             }
             else if (reduction == Reduction.Normal)
             {
-                switch (usage)
+                switch (primaryusage)
                 {   
                     case TextureUsage.MainTex:
                     case TextureUsage.NormalMap:
@@ -90,7 +90,7 @@ namespace com.aoyon.AutoConfigureTexture.Adjuster
             }
             else if (reduction == Reduction.High)
             {
-                switch (usage)
+                switch (primaryusage)
                 {   
                     case TextureUsage.MainTex:
                     case TextureUsage.NormalMap:
@@ -109,7 +109,7 @@ namespace com.aoyon.AutoConfigureTexture.Adjuster
             }
             else if (reduction == Reduction.Ultra)
             {
-                switch (usage)
+                switch (primaryusage)
                 {   
                     case TextureUsage.MainTex:
                     case TextureUsage.NormalMap:
@@ -128,6 +128,7 @@ namespace com.aoyon.AutoConfigureTexture.Adjuster
             }
 
             data = AdjustData.Create(resolution);
+            Debug.Log($"resolution: {resolution}, width: {width}, primaryusage: {primaryusage} for {info.Texture2D.name}" );
             return resolution != width;
 
             // 解像度が指定された最小値を下回らないようにしつつ、指定された除数で解像度を減少させます。
