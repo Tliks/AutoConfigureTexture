@@ -27,8 +27,8 @@ internal class ResolutionDegradationSensitivityAnalyzer
             case TextureUsage.NormalMap:
             case TextureUsage.NormalMapSub:
                 return ComputeResolutionImpactNormal(textureInfo, usageMask, scale);
-            default:
-                return ComputeResolutionImpactSSIM(textureInfo, usageMask, scale, windowSize: 11, stride: 2);
+			default:
+				return ComputeResolutionImpactSSIM(textureInfo, usageMask, scale, windowSize: 11, stride: 2);
         }
     }
 
@@ -228,9 +228,10 @@ internal class ResolutionDegradationSensitivityAnalyzer
 		Texture2D? maskTex = null;
 		try
 		{
-			// maskTex = maskService.BuildIslandMaskTexture(textureInfo.Texture2D, island);
+			// 旧: 島ごとにマスク生成して評価（遅い）
+			// 新: 高速経路では ID マップから集計するため、このAPIはフォールバックのみで使用
 			maskTex = GetWhiteMask();
-			return ComputeResolutionImpactSSIM(textureInfo, maskTex, scale, windowSize, stride); // テスト
+			return ComputeResolutionImpactSSIM(textureInfo, maskTex, scale, windowSize, stride);
 			switch (usage)
 			{
 				case TextureUsage.NormalMap:

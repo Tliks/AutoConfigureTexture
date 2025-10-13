@@ -1,0 +1,44 @@
+Shader "Hidden/ACT/IslandIdRenderer"
+{
+    Properties {}
+    SubShader
+    {
+        Tags { "RenderType"="Opaque" "Queue"="Geometry" }
+        Cull Off ZWrite Off ZTest Always
+        Pass
+        {
+            HLSLPROGRAM
+            #pragma vertex vert
+            #pragma fragment frag
+            struct appdata
+            {
+                float3 vertex : POSITION;
+            };
+            struct v2f
+            {
+                float4 pos : SV_POSITION;
+            };
+            float _IslandId;
+            v2f vert(appdata v)
+            {
+                v2f o;
+                float2 uv = v.vertex.xy;
+                float2 clip = uv * 2.0 - 1.0;
+                o.pos = float4(clip, 0, 1);
+                return o;
+            }
+            float4 frag(v2f i) : SV_Target
+            {
+                uint id = (uint)round(_IslandId);
+                float r = (id & 255u) / 255.0;
+                float g = ((id >> 8) & 255u) / 255.0;
+                float b = ((id >> 16) & 255u) / 255.0;
+                return float4(r, g, b, 1.0);
+            }
+            ENDHLSL
+        }
+    }
+}
+
+
+

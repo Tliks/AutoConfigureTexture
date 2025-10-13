@@ -13,6 +13,7 @@ internal sealed class TextureScaleDecider
 	private readonly ResolutionDegradationSensitivityAnalyzer _analyzer = new();
 	private readonly IslandAnalyzer _islandAnalyzer = new();
 	private readonly IslandMaskService _maskService = new();
+	private readonly IslandErrorAggregator _aggregator = new();
 
 	private static readonly float[] kScales = new[] { 0.5f, 0.25f, 0.0625f }; // 1/2, 1/4, 1/16
 
@@ -65,29 +66,23 @@ internal sealed class TextureScaleDecider
 					}
 				}
 			}
+			// 高速経路：IDマップ + 各ミップ一回走査で worst-island を算出
 			var DjByScale = new Dictionary<float, float>();
 			float sMax = 1.0f;
 			long savedMax = 0;
+			var agg = _aggregator.ComputeWorstIslandGradientLossByScale(info, islands, kScales);
 			foreach (var s in kScales)
 			{
-				// アイランド毎のスコアを計算し、重要度重み付き95p近似として max を採用（最小実装）
-				float worst = 0f;
-				for (int i = 0; i < islands.Count; i++)
-				{
-					float d = _analyzer.ComputeResolutionImpactForIsland(info, usage, islands[i], _maskService, s);
-					if (d > worst) worst = d;
-				}
+				float worst = agg.TryGetValue(s, out var v) ? v : 0f;
 				DjByScale[s] = NormalizeDelta(w, worst, T);
 				if (DjByScale[s] <= 1.0f)
 				{
-					sMax = s; // 最大の粗い s を最後に残す
+					sMax = s;
 					savedMax = bytes - EstimateSizeBytes(tex, s);
 				}
 			}
 			perTex.Add((info, usage, w, DjByScale, sMax, savedMax));
 		}
-
-		return null;
 
 		// 品質内での最大候補合計
 		long potentialSaved = 0;
