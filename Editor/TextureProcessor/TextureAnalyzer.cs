@@ -5,7 +5,6 @@ internal class TextureAnalyzer
     private readonly PrimaryUsageAnalyzer _primaryUsageAnalyzer;
     private readonly AlphaAnalyzer _alphaAnalyzer;
     private readonly DrawingCoordinatesAnalyzer _drawingCoordinatesAnalyzer;
-    private readonly IslandAnalyzer _islandAnalyzer;
     private readonly ResolutionDegradationSensitivityAnalyzer _resolutionAnalyzer;
 
     public TextureAnalyzer(GameObject root)
@@ -13,7 +12,6 @@ internal class TextureAnalyzer
         _primaryUsageAnalyzer = new PrimaryUsageAnalyzer();
         _alphaAnalyzer = new AlphaAnalyzer();
         _drawingCoordinatesAnalyzer = new DrawingCoordinatesAnalyzer(root.transform);
-        _islandAnalyzer = new IslandAnalyzer();
         _resolutionAnalyzer = new ResolutionDegradationSensitivityAnalyzer();
     }
 
@@ -34,7 +32,7 @@ internal class TextureAnalyzer
 
     public List<Island> GetIslands(Mesh mesh, int subMeshIndex, int uvChannel)
     {
-        return _islandAnalyzer.GetIslands(mesh, subMeshIndex, uvChannel);
+        return IslandCalculator.CalculateIslands(mesh, subMeshIndex, uvChannel).ToList();
     }
 
     public float ComputeResolutionReductionScore(TextureInfo textureInfo, Texture2D? usageMask, float scale)

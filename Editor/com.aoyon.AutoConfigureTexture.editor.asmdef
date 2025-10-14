@@ -4,9 +4,7 @@
     "references": [
         "nadena.dev.ndmf",
         "nadena.dev.ndmf.runtime",
-        "com.aoyon.AutoConfigureTexture.runtime",
-        "net.rs64.tex-trans-tool.runtime",
-        "net.rs64.tex-trans-core"
+        "com.aoyon.AutoConfigureTexture.runtime"
     ],
     "includePlatforms": [
         "Editor"
@@ -22,23 +20,7 @@
             "name": "jp.lilxyzw.liltoon",
             "expression": "1.8.0",
             "define": "ACT_lILTOON_1_8_0"
-        },
-        {
-            "name": "nadena.dev.modular-avatar",
-            "expression": "",
-            "define": "ACT_MA"
-        },
-        {
-            "name": "com.vrchat.base",
-            "expression": "",
-            "define": "HAS_HARMONY"
-        },
-        {
-            "name": "net.rs64.tex-trans-tool",
-            "expression": "0.10.0-beta.1",
-            "define": "ACT_HAS_TTT_0_10_0_OR_NEWER"
         }
     ],
-    
     "noEngineReferences": false
 }

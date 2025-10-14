@@ -1,5 +1,3 @@
-using System.Collections.Generic;
-using UnityEngine;
 using UnityEngine.Rendering;
 
 namespace com.aoyon.AutoConfigureTexture.Processor;
@@ -11,70 +9,68 @@ namespace com.aoyon.AutoConfigureTexture.Processor;
 /// </summary>
 internal sealed class IslandMaskService
 {
-	private readonly Shader? _shader;
-	private readonly Shader? _idShader;
+	private readonly Shader _shader;
+	private readonly Shader _idShader;
 
-	private readonly Dictionary<(Texture, int), RenderTexture> _rtCache = new();
-	private readonly Dictionary<(Texture, int), Texture2D> _texCache = new();
-	private readonly Dictionary<(Texture2D, int), Texture2D> _idMapCache = new();
+	private const string ShaderName = "Hidden/ACT/IslandMaskRenderer";
+	private const string IdShaderName = "Hidden/ACT/IslandIdRenderer";
 
-        private const string ShaderName = "Hidden/ACT/IslandMaskRenderer";
-        private const string IdShaderName = "Hidden/ACT/IslandIdRenderer";
-
-        public IslandMaskService()
+	public IslandMaskService()
 	{
 		_shader = Shader.Find(ShaderName);
 		if (_shader == null)
 		{
-			Debug.LogError($"Shader not found: {ShaderName}");
+			throw new Exception($"Shader not found: {ShaderName}");
 		}
-            _idShader = Shader.Find(IdShaderName);
-            if (_idShader == null)
-            {
-                Debug.LogError($"Shader not found: {IdShaderName}");
-            }
+		_idShader = Shader.Find(IdShaderName);
+		if (_idShader == null)
+		{
+			throw new Exception($"Shader not found: {IdShaderName}");
+		}
 	}
 
-	public RenderTexture BuildIslandMaskRT(Texture2D src, Island island)
+	public RenderTexture BuildIslandIdMapRT(Texture2D src, IReadOnlyList<Island> islands)
 	{
-		int triCount = island.TriangleIndices.Count;
-		if (triCount == 0)
+		var fmt = RenderTextureFormat.ARGB32;
+		var rt = new RenderTexture(src.width, src.height, 0, fmt)
 		{
-			return GetClearedRT(src.width, src.height);
-		}
+			name = "__ACT_IslandIdRT__",
+			useMipMap = false,
+			autoGenerateMips = false,
+			filterMode = FilterMode.Point,
+			wrapMode = TextureWrapMode.Clamp
+		};
+		rt.Create();
 
-		// Fallback if shader is not found (avoid runtime error)
-		if (_shader == null)
-		{
-			return GetClearedRT(src.width, src.height);
-		}
-
-		var mat = new Material(_shader);
-		mat.hideFlags = HideFlags.HideAndDontSave;
-		var rt = GetClearedRT(src.width, src.height);
-		var mesh = BuildIslandMesh(island);
-		var cmd = new CommandBuffer { name = "ACT/DrawIslandMask" };
+		var cmd = new CommandBuffer { name = "ACT/DrawIslandIdMap" };
 		cmd.SetRenderTarget(rt);
 		cmd.ClearRenderTarget(true, true, Color.black);
-		cmd.DrawMesh(mesh, Matrix4x4.identity, mat, 0, 0);
+
+		var mat = new Material(_idShader) { hideFlags = HideFlags.HideAndDontSave };
+		for (int i = 0; i < islands.Count; i++)
+		{
+			var mesh = BuildIslandMesh(islands[i]);
+			mat.SetFloat("_IslandId", i + 1); // 0 を非対象に、1..N を有効ID
+			cmd.DrawMesh(mesh, Matrix4x4.identity, mat, 0, 0);
+			Object.DestroyImmediate(mesh);
+		}
 		Graphics.ExecuteCommandBuffer(cmd);
 		cmd.Release();
-		Object.DestroyImmediate(mesh);
 		Object.DestroyImmediate(mat);
 		return rt;
 	}
 
-	public Texture2D BuildIslandMaskTexture(Texture2D src, Island island)
+	public Texture2D BuildIslandIdMapTexture(Texture2D src, IReadOnlyList<Island> islands)
 	{
-		var rt = BuildIslandMaskRT(src, island);
+		var rt = BuildIslandIdMapRT(src, islands);
 		var prev = RenderTexture.active;
 		try
 		{
 			RenderTexture.active = rt;
-			var tex = new Texture2D(rt.width, rt.height, TextureFormat.R8, false, true)
+			var tex = new Texture2D(rt.width, rt.height, TextureFormat.RGBA32, false, true)
 			{
-				name = "__ACT_IslandMask2D__",
-				filterMode = FilterMode.Bilinear,
+				name = "__ACT_IslandIdTex__",
+				filterMode = FilterMode.Point,
 				wrapMode = TextureWrapMode.Clamp
 			};
 			tex.ReadPixels(new Rect(0, 0, rt.width, rt.height), 0, 0, false);
@@ -86,70 +82,6 @@ internal sealed class IslandMaskService
 			RenderTexture.active = prev;
 		}
 	}
-
-        public RenderTexture BuildIslandIdMapRT(Texture2D src, IReadOnlyList<Island> islands)
-        {
-            var fmt = RenderTextureFormat.ARGB32;
-            var rt = new RenderTexture(src.width, src.height, 0, fmt)
-            {
-                name = "__ACT_IslandIdRT__",
-                useMipMap = false,
-                autoGenerateMips = false,
-                filterMode = FilterMode.Point,
-                wrapMode = TextureWrapMode.Clamp
-            };
-            rt.Create();
-
-            var cmd = new CommandBuffer { name = "ACT/DrawIslandIdMap" };
-            cmd.SetRenderTarget(rt);
-            cmd.ClearRenderTarget(true, true, Color.black);
-
-            if (_idShader == null || islands == null || islands.Count == 0)
-            {
-                Graphics.ExecuteCommandBuffer(cmd);
-                cmd.Release();
-                return rt;
-            }
-
-            var mat = new Material(_idShader) { hideFlags = HideFlags.HideAndDontSave };
-            for (int i = 0; i < islands.Count; i++)
-            {
-                var mesh = BuildIslandMesh(islands[i]);
-                mat.SetFloat("_IslandId", i + 1); // 0 を非対象に、1..N を有効ID
-                cmd.DrawMesh(mesh, Matrix4x4.identity, mat, 0, 0);
-                Object.DestroyImmediate(mesh);
-            }
-            Graphics.ExecuteCommandBuffer(cmd);
-            cmd.Release();
-            Object.DestroyImmediate(mat);
-            return rt;
-        }
-
-        public Texture2D BuildIslandIdMapTexture(Texture2D src, IReadOnlyList<Island> islands)
-        {
-		int keyCount = islands != null ? islands.Count : 0;
-		if (_idMapCache.TryGetValue((src, keyCount), out var cached)) return cached;
-		var rt = BuildIslandIdMapRT(src, islands ?? Array.Empty<Island>());
-            var prev = RenderTexture.active;
-            try
-            {
-                RenderTexture.active = rt;
-                var tex = new Texture2D(rt.width, rt.height, TextureFormat.RGBA32, false, true)
-                {
-                    name = "__ACT_IslandIdTex__",
-                    filterMode = FilterMode.Point,
-                    wrapMode = TextureWrapMode.Clamp
-                };
-                tex.ReadPixels(new Rect(0, 0, rt.width, rt.height), 0, 0, false);
-                tex.Apply(false, false);
-			_idMapCache[(src, islands?.Count ?? 0)] = tex;
-                return tex;
-            }
-            finally
-            {
-                RenderTexture.active = prev;
-            }
-        }
 
 	private static Mesh BuildIslandMesh(Island island)
 	{
@@ -178,28 +110,4 @@ internal sealed class IslandMaskService
 		mesh.UploadMeshData(false);
 		return mesh;
 	}
-
-	private static RenderTexture GetClearedRT(int w, int h)
-	{
-		var fmt = SystemInfo.SupportsRenderTextureFormat(RenderTextureFormat.R8)
-			? RenderTextureFormat.R8
-			: RenderTextureFormat.ARGB32;
-		var rt = new RenderTexture(w, h, 0, fmt)
-		{
-			name = "__ACT_IslandMaskRT__",
-			useMipMap = false,
-			autoGenerateMips = false,
-			filterMode = FilterMode.Bilinear,
-			wrapMode = TextureWrapMode.Clamp,
-			enableRandomWrite = false
-		};
-		rt.Create();
-		var active = RenderTexture.active;
-		RenderTexture.active = rt;
-		GL.Clear(true, true, Color.black);
-		RenderTexture.active = active;
-		return rt;
-	}
 }
-
-

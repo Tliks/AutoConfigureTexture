@@ -21,45 +21,31 @@ public class Island
     }
 }
 
-internal class IslandAnalyzer
+internal class IslandCalculator
 {
-    private readonly Dictionary<(Mesh, int, int), List<Island>> cache = new();
-
-    public List<Island> GetIslands(Mesh mesh, int subMeshIndex, int uvChannel)
-    {
-        var key = (mesh, subMeshIndex, uvChannel);
-        if (cache.TryGetValue(key, out var cachedIslands))
-        {
-            return cachedIslands;
-        }
-
-        var islands = CalculateIslands(mesh, subMeshIndex, uvChannel);
-        cache[key] = islands;
-        return islands;
-    }
-
-    private static List<Island> CalculateIslands(Mesh mesh, int subMeshIndex, int uvChannel)
+    public static Island[] CalculateIslands(Mesh mesh, int subMeshIndex, int uvChannel)
     {
         Profiler.BeginSample("GetIslands");
+
         Profiler.BeginSample("Init");
         var indies = mesh.GetIndices(subMeshIndex);
         var vertCount = indies.Length;
         
         var vertexList = new List<Vector3>();
         mesh.GetVertices(vertexList);
-        Vector3[] vertices = vertexList.ToArray();
+        var vertices = vertexList.ToArray();
         
         var uvList = new List<Vector2>(vertCount);
         mesh.GetUVs(uvChannel, uvList);
-        Vector2[] uvs = uvList.ToArray();
+        var uvs = uvList.ToArray();
         Profiler.EndSample();
 
         Profiler.BeginSample("InitUnionFind");
-        UnionFind unionFind = new UnionFind(vertCount);
+        var unionFind = new UnionFind(vertCount);
         Profiler.EndSample();
 
         Profiler.BeginSample("MergeSamePos");
-        Dictionary<Vector2, int> uvMap = new Dictionary<Vector2, int>(vertCount);
+        var uvMap = new Dictionary<Vector2, int>(vertCount);
         foreach (var i in indies)
         {
             if (uvMap.TryGetValue(uvs[i], out int existingIndex))
@@ -83,21 +69,21 @@ internal class IslandAnalyzer
         Profiler.EndSample();
 
         Profiler.BeginSample("Result");
-        Dictionary<int, Island> islandDict = new Dictionary<int, Island>(vertCount);
+        var islandIndices = new Dictionary<int, List<int>>(vertCount);
         for (int i = 0; i < triangles.Length; i += 3)
         {
             int root = unionFind.Find(triangles[i]);
-            if (!islandDict.TryGetValue(root, out var island))
-            {
-                island = new Island(vertices, uvs, triangles);
-                islandDict[root] = island;
-            }
-            island.AddTriangleIndex(i);
+            islandIndices.GetOrAddNew(root).Add(i);
+        }
+        var result = new Island[islandIndices.Count];
+        for (int i = 0; i < result.Length; i++)
+        {
+            result[i] = new Island(vertices, uvs, islandIndices[i].ToArray());
         }
         Profiler.EndSample();
-        Profiler.EndSample();
 
-        return new List<Island>(islandDict.Values);
+        Profiler.EndSample();
+        return result;
     }
     
     class UnionFind

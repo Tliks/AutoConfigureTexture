@@ -1,7 +1,3 @@
-using System;
-using System.Collections.Generic;
-using UnityEngine;
-
 namespace com.aoyon.AutoConfigureTexture.Processor;
 
 /// <summary>
@@ -11,7 +7,6 @@ namespace com.aoyon.AutoConfigureTexture.Processor;
 internal sealed class TextureScaleDecider
 {
 	private readonly ResolutionDegradationSensitivityAnalyzer _analyzer = new();
-	private readonly IslandAnalyzer _islandAnalyzer = new();
 	private readonly IslandMaskService _maskService = new();
 	private readonly IslandErrorAggregator _aggregator = new();
 
@@ -24,9 +19,9 @@ internal sealed class TextureScaleDecider
 		public long SavedBytes;
 		public string Reason;
 
-		public override string ToString()
+		public override readonly string ToString()
 		{
-			return $"Texture: {Texture?.name ?? "null"}, SelectedScale: {SelectedScale}, SavedBytes: {SavedBytes}, Reason: {Reason}";
+			return $"Texture: {Texture.name}, SelectedScale: {SelectedScale}, SavedBytes: {SavedBytes}, Reason: {Reason}";
 		}
 	}
 
@@ -34,39 +29,29 @@ internal sealed class TextureScaleDecider
 		IReadOnlyList<TextureInfo> items,
 		float q)
 	{
+		Profiler.BeginSample("TextureScaleDecider.Decide");
+
+		Profiler.BeginSample("Params");
 		// q→内部パラメータ
 		float T = MapQualityThreshold(q);
 		float B = MapBudgetRatio(q); // 0..1 of total
 		float F = MapApplyFraction(q);
-
-		// 各テクスチャごとに island→D_j(s) を計算し、許容集合 S_j^ok を作る
-		var perTex = new List<(TextureInfo info, TextureUsage usage, float w, Dictionary<float, float> DjByScale, float sMax, long savedMax)>();
+		Profiler.EndSample();
+		
 		long totalBytes = 0;
+		var perTex = new List<(TextureInfo info, float scale, long savedBytes)>();
 		foreach (var info in items)
 		{
-			var usage = PrimaryUsageAnalyzer.Analyze(info);
-
-			var tex = info.Texture2D;
-			long bytes = EstimateSizeBytes(tex);
+			var originalTexture = info.Texture2D;
+			var bytes = MathHelper.ComputeVRAMSize(originalTexture, originalTexture.format);
 			totalBytes += bytes;
-			float w = TextureImportanceHeuristics.Compute(info, usage);
 
-			var islands = new List<Island>();
-			foreach (var property in info.Properties)
-			{
-				var uv = property.UVchannel;
-				var materialInfo = property.MaterialInfo;
-				foreach (var (renderer, indices) in materialInfo.Renderers)
-				{
-					var mesh = Utils.GetMesh(renderer);
-					if (mesh == null) continue;
-					foreach (var index in indices)
-					{
-						islands.AddRange(_islandAnalyzer.GetIslands(mesh, index, uv));
-					}
-				}
-			}
+			(var islands, var islandsArgs) = CalculateIslandsFor(info);
+
+			var w = TextureImportanceHeuristics.Compute(info, usage);
+
 			// 高速経路：IDマップ + 各ミップ一回走査で worst-island を算出
+			Profiler.BeginSample("ComputeWorstIslandGradientLossByScale");
 			var DjByScale = new Dictionary<float, float>();
 			float sMax = 1.0f;
 			long savedMax = 0;
@@ -78,33 +63,27 @@ internal sealed class TextureScaleDecider
 				if (DjByScale[s] <= 1.0f)
 				{
 					sMax = s;
-					savedMax = bytes - EstimateSizeBytes(tex, s);
+					savedMax = bytes - MathHelper.ComputeVRAMSize(originalTexture, s);
 				}
 			}
-			perTex.Add((info, usage, w, DjByScale, sMax, savedMax));
+			Profiler.EndSample();
+			perTex.Add((info, sMax, savedMax));
 		}
-
-		// 品質内での最大候補合計
-		long potentialSaved = 0;
-		foreach (var t in perTex) potentialSaved += t.savedMax;
-		long budgetMax = (long)(B * totalBytes);
 
 		var results = new List<Result>(perTex.Count);
-		if (potentialSaved <= budgetMax)
+		foreach (var t in perTex)
 		{
-			foreach (var t in perTex)
+			results.Add(new Result
 			{
-				results.Add(new Result
-				{
-					Texture = t.info.Texture2D,
-					SelectedScale = t.sMax,
-					SavedBytes = t.savedMax,
-					Reason = "quality-ok:max"
-				});
-			}
-			return results;
+				Texture = t.info.Texture2D,
+				SelectedScale = t.scale,
+				SavedBytes = t.savedBytes,
+				Reason = "quality-ok:max"
+			});
 		}
+		return results;
 
+		/*
 		// 予算超過: 低重要度から割当
 		perTex.Sort((a, b) => a.w.CompareTo(b.w) != 0 ? a.w.CompareTo(b.w) : b.savedMax.CompareTo(a.savedMax));
 		long acc = 0;
@@ -125,7 +104,38 @@ internal sealed class TextureScaleDecider
 			}
 		}
 		return results;
+		*/
 	}
+
+	private static (Island[], IslandArgument[]) CalculateIslandsFor(TextureInfo info)
+	{
+		var uniqueArgs = new HashSet<IslandArgument>();
+		foreach (var property in info.Properties)
+		{
+			var uv = property.UVchannel;
+			var materialInfo = property.MaterialInfo;
+			foreach (var (renderer, indices) in materialInfo.Renderers)
+			{
+				var mesh = Utils.GetMesh(renderer);
+				if (mesh == null) continue;
+				foreach (var index in indices)
+				{
+					uniqueArgs.Add(new IslandArgument(property, uv, materialInfo, renderer, mesh, index));
+				}
+			}
+		}
+		var allIslands = new List<Island>();
+		var allArgs = new List<IslandArgument>();
+		foreach (var arg in uniqueArgs)
+		{
+			var islandsPerArg = IslandCalculator.CalculateIslands(arg.Mesh, arg.SubMeshIndex, arg.UVchannel);
+			allArgs.AddRange(Enumerable.Repeat(arg, islandsPerArg.Length)); // 同じArgにより生成されたIslands
+			allIslands.AddRange(islandsPerArg);
+		}
+		return (allIslands.ToArray(), allArgs.ToArray());
+	}
+
+	private record IslandArgument(PropertyInfo PropertyInfo, int UVchannel, MaterialInfo MaterialInfo, Renderer Renderer, Mesh Mesh, int SubMeshIndex);
 
 	private static float MapQualityThreshold(float q)
 	{
@@ -147,23 +157,4 @@ internal sealed class TextureScaleDecider
 		float eff = Tq * (1.0f + 0.5f * (1.0f - Mathf.Clamp01(importance)));
 		return delta / Mathf.Max(1e-6f, eff);
 	}
-	private static long EstimateSizeBytes(Texture2D tex, float scale = 1.0f)
-	{
-		int w = Mathf.Max(1, Mathf.RoundToInt(tex.width * scale));
-		int h = Mathf.Max(1, Mathf.RoundToInt(tex.height * scale));
-		int bpp = GetFormatBytesPerPixel(tex.format);
-		return (long)w * h * Mathf.Max(1, bpp);
-	}
-	private static int GetFormatBytesPerPixel(TextureFormat fmt)
-	{
-		switch (fmt)
-		{
-			case TextureFormat.RGBA32: return 4;
-			case TextureFormat.RGB24: return 3;
-			case TextureFormat.R8: return 1;
-			default: return 4; // 簡易見積もり
-		}
-	}
 }
-
-
