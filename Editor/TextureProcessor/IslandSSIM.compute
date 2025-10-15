@@ -1,0 +1,110 @@
+#pragma kernel CSMain
+
+// Compute per-island SSIM deltas in a single pass using an IslandId map.
+// For each output window center, we compute SSIM between base level and a downsampled mip level
+// and atomically accumulate (delta, weight) into per-island bins based on the island id at the window center.
+
+// Atomic ops are only supported for int/uint. Use fixed-point for delta sum.
+// Flat buffer: [island0_sumFixed, island0_count, island1_sumFixed, island1_count, ...]
+RWStructuredBuffer<uint> _IslandSums;
+
+Texture2D<float4> _SrcTex;
+SamplerState sampler_linear_clamp;
+Texture2D<float4> _IdTex;
+
+int2 _TexSize;
+int _Window;     // odd window size, e.g., 11
+int _Stride;     // sampling stride, e.g., 2
+int _MipLevel;   // mip for downsampled reference
+int _NumIslands; // N
+
+static const float C1 = 0.01 * 0.01;
+static const float C2 = 0.03 * 0.03;
+
+float luminance(float3 c)
+{
+    // sRGB-like luma approximation (no gamma correction for speed)
+    return dot(c, float3(0.299, 0.587, 0.114));
+}
+
+uint decodeId24(float4 c)
+{
+    uint r = (uint)round(saturate(c.r) * 255.0);
+    uint g = (uint)round(saturate(c.g) * 255.0);
+    uint b = (uint)round(saturate(c.b) * 255.0);
+    return r | (g << 8) | (b << 16);
+}
+
+[numthreads(8, 8, 1)]
+void CSMain(uint3 tid : SV_DispatchThreadID)
+{
+    // Output grid size derived by C#; here we map thread to a window center
+    int outX = tid.x;
+    int outY = tid.y;
+
+    int step = max(1, _Stride);
+    int win  = max(1, _Window);
+    int half = win / 2;
+
+    int2 size = _TexSize;
+    int gx = outX * step + half;
+    int gy = outY * step + half;
+    if (gx < half || gy < half || gx >= size.x - half || gy >= size.y - half)
+        return;
+
+    // Determine island id at window center
+    float4 idc = _IdTex.Load(int3(gx, gy, 0));
+    uint id = decodeId24(idc);
+    if (id == 0u) return; // outside
+    if ((int)id < 1 || (int)id > _NumIslands) return;
+    int bin = (int)id - 1;
+
+    // Compute stats over window for base (L0) and downsampled mip (_MipLevel)
+    double sumX = 0.0, sumY = 0.0;
+    double sumX2 = 0.0, sumY2 = 0.0, sumXY = 0.0;
+    int count = 0;
+    int scale = 1 << max(0, _MipLevel);
+
+    for (int dy = -half; dy <= half; dy++)
+    {
+        int yy = gy + dy;
+        int yyL = yy / scale;
+        for (int dx = -half; dx <= half; dx++)
+        {
+            int xx = gx + dx;
+            int xxL = xx / scale;
+
+            float3 a = _SrcTex.Load(int3(xx, yy, 0)).rgb;
+            float3 b = _SrcTex.Load(int3(xxL, yyL, _MipLevel)).rgb;
+            float lx = luminance(a);
+            float ly = luminance(b);
+            sumX += lx;
+            sumY += ly;
+            sumX2 += (double)lx * (double)lx;
+            sumY2 += (double)ly * (double)ly;
+            sumXY += (double)lx * (double)ly;
+            count++;
+        }
+    }
+
+    if (count <= 0) return;
+    double invN = 1.0 / (double)count;
+    double muX = sumX * invN;
+    double muY = sumY * invN;
+    double varX = sumX2 * invN - muX * muX;
+    double varY = sumY2 * invN - muY * muY;
+    double covXY = sumXY * invN - muX * muY;
+
+    double ssim = ((2.0 * muX * muY + C1) * (2.0 * covXY + C2)) / ((muX * muX + muY * muY + C1) * (varX + varY + C2) + 1e-12);
+    float delta = saturate(1.0 - (float)ssim);
+
+    // Fixed-point scale: 256 (Q8.8) to avoid overflow at large window counts
+    const float FP_SCALE = 256.0;
+    uint deltaFixed = (uint)round(delta * FP_SCALE);
+
+    uint baseIndex = (uint)(bin * 2);
+    InterlockedAdd(_IslandSums[baseIndex + 0], deltaFixed);
+    InterlockedAdd(_IslandSums[baseIndex + 1], 1u);
+}
+
+

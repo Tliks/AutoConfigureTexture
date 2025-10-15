@@ -4,14 +4,12 @@ internal class TextureAnalyzer
 {
     private readonly PrimaryUsageAnalyzer _primaryUsageAnalyzer;
     private readonly AlphaAnalyzer _alphaAnalyzer;
-    private readonly DrawingCoordinatesAnalyzer _drawingCoordinatesAnalyzer;
     private readonly ResolutionDegradationSensitivityAnalyzer _resolutionAnalyzer;
 
     public TextureAnalyzer(GameObject root)
     {
         _primaryUsageAnalyzer = new PrimaryUsageAnalyzer();
         _alphaAnalyzer = new AlphaAnalyzer();
-        _drawingCoordinatesAnalyzer = new DrawingCoordinatesAnalyzer(root.transform);
         _resolutionAnalyzer = new ResolutionDegradationSensitivityAnalyzer();
     }
 
@@ -23,11 +21,6 @@ internal class TextureAnalyzer
     public bool HasAlpha(TextureInfo textureInfo)
     {
         return _alphaAnalyzer.HasAlpha(textureInfo);
-    }
-
-    public bool IsAllDrawingCoordinatesUnderHeight(TextureInfo textureInfo, float thresholdRatio)
-    {
-        return _drawingCoordinatesAnalyzer.IsAllDrawingCoordinatesUnderHeight(textureInfo, thresholdRatio);
     }
 
     public List<Island> GetIslands(Mesh mesh, int subMeshIndex, int uvChannel)

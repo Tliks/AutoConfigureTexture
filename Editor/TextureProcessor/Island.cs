@@ -1,23 +1,19 @@
 namespace com.aoyon.AutoConfigureTexture.Processor;
 
-public class Island
+internal class Island
 {
     public readonly Vector3[] Vertices;
     public readonly Vector2[] UVs;
     public readonly int[] Triangles;
 
-    public readonly List<int> TriangleIndices = new();
+    public readonly int[] TriangleIndices;
     
-    public Island(Vector3[] vertices, Vector2[] uvs, int[] triangles)
+    public Island(Vector3[] vertices, Vector2[] uvs, int[] triangles, int[] triangleIndices)
     {
         Vertices = vertices;
         UVs = uvs;
         Triangles = triangles;
-    }
-
-    public void AddTriangleIndex(int triangleIndex)
-    {
-        TriangleIndices.Add(triangleIndex);
+        TriangleIndices = triangleIndices;
     }
 }
 
@@ -76,9 +72,11 @@ internal class IslandCalculator
             islandIndices.GetOrAddNew(root).Add(i);
         }
         var result = new Island[islandIndices.Count];
-        for (int i = 0; i < result.Length; i++)
+        int j = 0;
+        foreach (var (_, indices) in islandIndices)
         {
-            result[i] = new Island(vertices, uvs, islandIndices[i].ToArray());
+            result[j] = new Island(vertices, uvs, triangles, indices.ToArray());
+            j++;
         }
         Profiler.EndSample();
 

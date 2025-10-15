@@ -18,7 +18,7 @@ internal class ResolutionDegradationSensitivityAnalyzer
     public float ComputeResolutionReductionScore(
         TextureInfo textureInfo,
         TextureUsage usage,
-        Texture2D? usageMask,
+        Texture? usageMask,
         float scale)
     {
 		ValidatePow2Scale(textureInfo.Texture2D, scale);
@@ -54,7 +54,7 @@ internal class ResolutionDegradationSensitivityAnalyzer
 	/// SSIMベースのスコア: 1 - SSIM(I, I_sim) のマスク加重平均（0..1）。
 	/// ウィンドウは正方形(既定11)。コストを抑えるためstride指定で間引き評価。
 	/// </summary>
-	public float ComputeResolutionImpactSSIM(TextureInfo textureInfo, Texture2D? mask, float scale, int windowSize = 11, int stride = 2)
+    public float ComputeResolutionImpactSSIM(TextureInfo textureInfo, Texture? mask, float scale, int windowSize = 11, int stride = 2)
 	{
 		if (textureInfo == null) throw new System.ArgumentNullException(nameof(textureInfo));
 		if (textureInfo.Texture2D == null) throw new System.ArgumentException("Texture2D is null");
@@ -62,7 +62,7 @@ internal class ResolutionDegradationSensitivityAnalyzer
 
 		if (SystemInfo.supportsComputeShaders)
 		{
-			return ComputeSSIM_GPU(textureInfo, mask, scale, windowSize, stride);
+            return ComputeSSIM_GPU(textureInfo, mask, scale, windowSize, stride);
 		}
 		else
 		{
@@ -71,7 +71,7 @@ internal class ResolutionDegradationSensitivityAnalyzer
 		}
 	}
 
-	private float ComputeSSIM_GPU(TextureInfo textureInfo, Texture2D? mask, float scale, int windowSize, int stride)
+    private float ComputeSSIM_GPU(TextureInfo textureInfo, Texture? mask, float scale, int windowSize, int stride)
 	{
 		var shader = _ssimShader;
 		if (shader == null) throw new System.InvalidOperationException("ComputeShader not found: " + SSIMShaderGUID);
@@ -103,8 +103,8 @@ internal class ResolutionDegradationSensitivityAnalyzer
 		var reduceA = new ComputeBuffer(outCountReduce, sizeof(float) * 2);
 		try
 		{
-			shader.SetTexture(kernel, "_SrcTex", src);
-			shader.SetTexture(kernel, "_MaskTex", mask ?? GetWhiteMask());
+            shader.SetTexture(kernel, "_SrcTex", src);
+            shader.SetTexture(kernel, "_MaskTex", mask ?? GetWhiteMask());
 			shader.SetInt("_MipLevel", mipLevel);
 			shader.SetInt("_Window", windowSize);
 			shader.SetInt("_Stride", stride);
@@ -148,7 +148,7 @@ internal class ResolutionDegradationSensitivityAnalyzer
 	/// ノーマルマップ向け: Down→Up後の法線ベクトル角度誤差のマスク重み平均を0..1に正規化して返す。
 	/// 角度は度数法で評価し、90度でクリップして 角度/90 をスコアとする。
 	/// </summary>
-	public float ComputeResolutionImpactNormal(TextureInfo textureInfo, Texture2D? mask, float scale)
+    public float ComputeResolutionImpactNormal(TextureInfo textureInfo, Texture? mask, float scale)
 	{
 		if (textureInfo == null) throw new System.ArgumentNullException(nameof(textureInfo));
 		if (textureInfo.Texture2D == null) throw new System.ArgumentException("Texture2D is null");
@@ -170,7 +170,11 @@ internal class ResolutionDegradationSensitivityAnalyzer
 			{
 				mask = null;
 			}
-			Color32[]? maskPixels = mask != null ? mask.GetPixels32() : null;
+            Color32[]? maskPixels = null;
+            if (mask is Texture2D maskTex2D)
+            {
+                maskPixels = maskTex2D.GetPixels32();
+            }
 
 			float sumWeightedDeg = 0f;
 			float sumW = 0f;

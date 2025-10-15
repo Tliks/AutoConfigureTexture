@@ -6,8 +6,6 @@ namespace com.aoyon.AutoConfigureTexture.Processor;
 
 internal class AlphaAnalyzer
 {
-    private readonly Dictionary<Texture2D, bool> _hasAlphaCache = new();
-
     private static Material? s_alphaBinarizationMaterial = null;
     private static Material AlphaBinarizationMaterial
     {
@@ -28,18 +26,6 @@ internal class AlphaAnalyzer
 
     public bool HasAlpha(TextureInfo textureInfo)
     {
-        if (_hasAlphaCache.TryGetValue(textureInfo.Texture2D, out var hasAlpha))
-        {
-            return hasAlpha;
-        }
-
-        hasAlpha = HasAlphaImpl(textureInfo);
-        _hasAlphaCache.Add(textureInfo.Texture2D, hasAlpha);
-        return hasAlpha;
-    }
-
-    private bool HasAlphaImpl(TextureInfo textureInfo)
-    {
         if (GraphicsFormatUtility.HasAlphaChannel(textureInfo.Format))
         {
             try
@@ -57,7 +43,7 @@ internal class AlphaAnalyzer
             return false;
         }
     }
-
+    
     private static bool HasAlphaWithBinarization(Texture texture)
     {
         var temp = RenderTexture.GetTemporary(32, 32, 0, RenderTextureFormat.R8);
