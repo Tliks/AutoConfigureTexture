@@ -55,9 +55,11 @@ internal sealed class IslandMaskService
         var cmd = new CommandBuffer { name = "ACT/DrawIslandIdMap" };
         cmd.SetRenderTarget(rt);
         cmd.SetViewport(new Rect(0, 0, rt.width, rt.height));
-		var view = Matrix4x4.LookAt(Vector3.back * 10f, Vector3.zero, Vector3.up);
-		var proj = Matrix4x4.Ortho(0, 1, 0, 1, 0.01f, 20f);
-		cmd.SetViewProjectionMatrices(view, proj);
+        // Editor可視化用：renderIntoTexture=false で左上原点（Editor表示座標系）に合わせる
+        var view = Matrix4x4.LookAt(Vector3.back * 10f, Vector3.zero, Vector3.up);
+        var proj = Matrix4x4.Ortho(0, 1, 0, 1, 0.01f, 20f);
+        var gpuProj = GL.GetGPUProjectionMatrix(proj, /*renderIntoTexture*/ false);
+        cmd.SetViewProjectionMatrices(view, gpuProj);
         cmd.ClearRenderTarget(true, true, Color.black);
 
         // Mesh はコマンド実行後に破棄する（実行前に破棄すると描画されない）
@@ -85,10 +87,11 @@ internal sealed class IslandMaskService
 		var cmd = new CommandBuffer { name = "ACT/DrawAllIslands" };
 		cmd.SetRenderTarget(rt);
 		cmd.SetViewport(new Rect(0, 0, rt.width, rt.height));
-		// Ortho 0..1 でUV平面に描画（デバッグ向けマスク）
+		// Editor可視化用：renderIntoTexture=false で左上原点（Editor表示座標系）に統一
 		var view = Matrix4x4.LookAt(Vector3.back * 10f, Vector3.zero, Vector3.up);
 		var proj = Matrix4x4.Ortho(0, 1, 0, 1, 0.01f, 20f);
-		cmd.SetViewProjectionMatrices(view, proj);
+		var gpuProj = GL.GetGPUProjectionMatrix(proj, /*renderIntoTexture*/ false);
+		cmd.SetViewProjectionMatrices(view, gpuProj);
 		cmd.ClearRenderTarget(true, true, Color.black);
 		var mat = new Material(Shader.Find("Unlit/Color")) { hideFlags = HideFlags.HideAndDontSave };
 		try

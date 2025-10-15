@@ -10,7 +10,11 @@ namespace com.aoyon.AutoConfigureTexture.GUI
 		private Renderer? _renderer;
 		private int _subMeshIndex = 0;
 		private int _uvChannel = 0;
+
 		private RenderTexture? _idRT;
+		private RenderTexture? _maskRT;
+		private RenderTexture? _meanOverlayRT;
+
 		private Vector2 _scroll;
 		private float[] _lastMeans = System.Array.Empty<float>();
 		private int[] _lastCounts = System.Array.Empty<int>();
@@ -49,7 +53,6 @@ namespace com.aoyon.AutoConfigureTexture.GUI
 			EditorGUILayout.Space();
 			_scroll = EditorGUILayout.BeginScrollView(_scroll);
 			DrawPreview();
-			DrawLastStats();
 			EditorGUILayout.EndScrollView();
 		}
 
@@ -61,8 +64,25 @@ namespace com.aoyon.AutoConfigureTexture.GUI
 			var islands = IslandCalculator.CalculateIslands(mesh, _subMeshIndex, _uvChannel);
 			var svc = new IslandMaskService();
 			_idRT = svc.BuildIslandIdMapRT(_texture, islands);
-			svc.DebugLogIslandUvBounds(islands);
-			svc.DebugLogIslandIdStats(_texture, islands, savePng: false);
+		}
+
+		private void DrawAllIsland()
+		{
+			if (_texture == null || _renderer == null) return;
+			var mesh = Utils.GetMesh(_renderer);
+			if (mesh == null) { Debug.LogWarning("[ACT][IslandDebug] Mesh not found on renderer"); return; }
+			var islands = IslandCalculator.CalculateIslands(mesh, _subMeshIndex, _uvChannel);
+			if (islands.Length == 0) { Debug.LogWarning("[ACT][IslandDebug] No islands"); return; }
+			if (_maskRT == null)
+			{
+				_maskRT = new RenderTexture(_texture.width, _texture.height, 0, RenderTextureFormat.ARGB32);
+				_maskRT.filterMode = FilterMode.Point;
+				_maskRT.wrapMode = TextureWrapMode.Clamp;
+				_maskRT.Create();
+			}
+			var svc = new IslandMaskService();
+			svc.DrawAllIsland(_maskRT, islands);
+			Repaint();
 		}
 
 		private void RunIslandSSIM()
@@ -72,7 +92,7 @@ namespace com.aoyon.AutoConfigureTexture.GUI
 			if (mesh == null) { Debug.LogWarning("[ACT][IslandDebug] Mesh not found on renderer"); return; }
 			var islands = IslandCalculator.CalculateIslands(mesh, _subMeshIndex, _uvChannel);
 			var svc = new IslandMaskService();
-			if (_idRT == null) _idRT = svc.BuildIslandIdMapRT(_texture, islands);
+			_idRT = svc.BuildIslandIdMapRT(_texture, islands);
 
 			var eval = new IslandSSIMEvaluator();
 			float[] scales = new float[] { 0.5f, 0.25f, 0.125f, 0.0625f };
@@ -88,27 +108,10 @@ namespace com.aoyon.AutoConfigureTexture.GUI
 				{
 					Debug.Log($"  #{i+1}: mean={res[i].x:0.###} n={(int)res[i].y}");
 				}
+				_meanOverlayRT = IslandMeanVisualizer.BuildMeanOverlay(_idRT, res, useHeatColor: false);
 			}
 		}
 
-		private void DrawAllIsland()
-		{
-			if (_texture == null || _renderer == null) return;
-			var mesh = Utils.GetMesh(_renderer);
-			if (mesh == null) { Debug.LogWarning("[ACT][IslandDebug] Mesh not found on renderer"); return; }
-			var islands = IslandCalculator.CalculateIslands(mesh, _subMeshIndex, _uvChannel);
-			if (islands.Length == 0) { Debug.LogWarning("[ACT][IslandDebug] No islands"); return; }
-			if (_idRT == null)
-			{
-				_idRT = new RenderTexture(_texture.width, _texture.height, 0, RenderTextureFormat.ARGB32);
-				_idRT.filterMode = FilterMode.Point;
-				_idRT.wrapMode = TextureWrapMode.Clamp;
-				_idRT.Create();
-			}
-			var svc = new IslandMaskService();
-			svc.DrawAllIsland(_idRT, islands);
-			Repaint();
-		}
 
 		private static int ComputeMipLevelForScale(Texture2D src, float scale)
 		{
@@ -122,19 +125,26 @@ namespace com.aoyon.AutoConfigureTexture.GUI
 
 		private void DrawPreview()
 		{
-			if (_idRT == null) return;
-			Rect r = GUILayoutUtility.GetRect(position.width - 20, position.width - 20, 256, 2048);
-			EditorGUI.DrawPreviewTexture(r, _idRT);
-		}
+			if (_texture == null && _idRT == null && _maskRT == null && _meanOverlayRT == null) return;
+			float spacing = 8f;
+			int rows = 2, cols = 2;
+			float previewSizeW = Mathf.Min((position.width - (cols + 1) * spacing) / cols, 400f);
+			float previewSizeH = Mathf.Min((position.height - (rows + 1) * spacing) / rows, 400f);
+			float previewSize = Mathf.Min(previewSizeW, previewSizeH);
 
-		private void DrawLastStats()
-		{
-			if (_lastMeans == null || _lastCounts == null || _lastMeans.Length == 0) return;
-			EditorGUILayout.LabelField("Last SSIM Means (first 32)", EditorStyles.boldLabel);
-			int show = Mathf.Min(32, _lastMeans.Length);
-			for (int i = 0; i < show; i++)
+			string[] labels = { "Original", "ID Map", "Mask", "Mean Overlay" };
+			Texture?[] textures = { _texture, _idRT, _maskRT, _meanOverlayRT };
+
+			for (int i = 0; i < 4; i++)
 			{
-				EditorGUILayout.LabelField($"#{i+1}: mean={_lastMeans[i]:0.###} n={_lastCounts[i]}");
+				if (textures[i] == null) continue;
+				int row = i / cols;
+				int col = i % cols;
+				float x = spacing + col * (previewSize + spacing);
+				float y = spacing + row * (previewSize + spacing);
+				Rect r = new Rect(x, y, previewSize, previewSize);
+				EditorGUI.LabelField(new Rect(r.x, r.y - 18f, r.width, 16f), labels[i], EditorStyles.boldLabel);
+				EditorGUI.DrawPreviewTexture(r, textures[i]);
 			}
 		}
 	}

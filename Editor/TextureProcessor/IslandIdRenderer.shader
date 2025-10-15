@@ -10,6 +10,7 @@ Shader "Hidden/ACT/IslandIdRenderer"
             HLSLPROGRAM
             #pragma vertex vert
             #pragma fragment frag
+            #include "UnityCG.cginc"
             struct appdata
             {
                 float3 vertex : POSITION;
@@ -22,9 +23,9 @@ Shader "Hidden/ACT/IslandIdRenderer"
             v2f vert(appdata v)
             {
                 v2f o;
-                float2 uv = v.vertex.xy;
-                float2 clip = uv * 2.0 - 1.0;
-                o.pos = float4(clip, 0, 1);
+                // VP=Ortho(0..1) を CommandBuffer 側でセットしている前提。
+                // ここではそのままVPを適用するだけ。
+                o.pos = mul(UNITY_MATRIX_VP, float4(v.vertex.xy, 0, 1));
                 return o;
             }
             float4 frag(v2f i) : SV_Target
