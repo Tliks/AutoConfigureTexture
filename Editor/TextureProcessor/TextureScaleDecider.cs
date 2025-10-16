@@ -35,7 +35,7 @@ internal sealed class TextureScaleDecider
             if (tex == null) { continue; }
             long bytes = MathHelper.ComputeVRAMSize(tex, tex.format);
 
-            var (islands, _) = CalculateIslandsFor(info);
+            var (islands, _) = IslandCalculator.CalculateIslandsFor(info);
             if (islands.Length == 0)
             {
                 results.Add(new Result { Texture = tex, SelectedScale = 1.0f, SavedBytes = 0, Reason = "no-islands" });
@@ -91,35 +91,6 @@ internal sealed class TextureScaleDecider
         return results;
 	}
 
-	private static (Island[], IslandArgument[]) CalculateIslandsFor(TextureInfo info)
-	{
-		var uniqueArgs = new HashSet<IslandArgument>();
-		foreach (var property in info.Properties)
-		{
-			var uv = property.UVchannel;
-			var materialInfo = property.MaterialInfo;
-			foreach (var (renderer, indices) in materialInfo.Renderers)
-			{
-				var mesh = Utils.GetMesh(renderer);
-				if (mesh == null) continue;
-				foreach (var index in indices)
-				{
-					uniqueArgs.Add(new IslandArgument(property, uv, materialInfo, renderer, mesh, index));
-				}
-			}
-		}
-		var allIslands = new List<Island>();
-		var allArgs = new List<IslandArgument>();
-		foreach (var arg in uniqueArgs)
-		{
-			var islandsPerArg = IslandCalculator.CalculateIslands(arg.Mesh, arg.SubMeshIndex, arg.UVchannel);
-			allArgs.AddRange(Enumerable.Repeat(arg, islandsPerArg.Length)); // 同じArgにより生成されたIslands
-			allIslands.AddRange(islandsPerArg);
-		}
-		return (allIslands.ToArray(), allArgs.ToArray());
-	}
-
-	private record IslandArgument(PropertyInfo PropertyInfo, int UVchannel, MaterialInfo MaterialInfo, Renderer Renderer, Mesh Mesh, int SubMeshIndex);
 
 	private static int ComputeMipLevelForScale(Texture2D src, float scale)
 	{

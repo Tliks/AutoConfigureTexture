@@ -1,3 +1,5 @@
+using UnityEngine.Pool;
+
 namespace com.aoyon.AutoConfigureTexture.Processor;
 
 internal class Island
@@ -19,6 +21,36 @@ internal class Island
 
 internal class IslandCalculator
 {
+	public static (Island[], IslandArgument[]) CalculateIslandsFor(TextureInfo info)
+	{
+		var uniqueArgs = new HashSet<IslandArgument>();
+		foreach (var property in info.Properties)
+		{
+			var uv = property.UVchannel;
+			var materialInfo = property.MaterialInfo;
+			foreach (var (renderer, indices) in materialInfo.Renderers)
+			{
+				var mesh = Utils.GetMesh(renderer);
+				if (mesh == null) continue;
+				foreach (var index in indices)
+				{
+					uniqueArgs.Add(new IslandArgument(property, uv, materialInfo, renderer, mesh, index));
+				}
+			}
+		}
+		var allIslands = new List<Island>();
+		var allArgs = new List<IslandArgument>();
+		foreach (var arg in uniqueArgs)
+		{
+			var islandsPerArg = IslandCalculator.CalculateIslands(arg.Mesh, arg.SubMeshIndex, arg.UVchannel);
+			allArgs.AddRange(Enumerable.Repeat(arg, islandsPerArg.Length)); // 同じArgにより生成されたIslands
+			allIslands.AddRange(islandsPerArg);
+		}
+		return (allIslands.ToArray(), allArgs.ToArray());
+	}
+
+	public record IslandArgument(PropertyInfo PropertyInfo, int UVchannel, MaterialInfo MaterialInfo, Renderer Renderer, Mesh Mesh, int SubMeshIndex);
+    
     public static Island[] CalculateIslands(Mesh mesh, int subMeshIndex, int uvChannel)
     {
         Profiler.BeginSample("GetIslands");
@@ -69,13 +101,14 @@ internal class IslandCalculator
         for (int i = 0; i < triangles.Length; i += 3)
         {
             int root = unionFind.Find(triangles[i]);
-            islandIndices.GetOrAddNew(root).Add(i);
+            islandIndices.GetOrAdd(root, ListPool<int>.Get()).Add(i);
         }
         var result = new Island[islandIndices.Count];
         int j = 0;
         foreach (var (_, indices) in islandIndices)
         {
             result[j] = new Island(vertices, uvs, triangles, indices.ToArray());
+            ListPool<int>.Release(indices);
             j++;
         }
         Profiler.EndSample();
