@@ -9,10 +9,11 @@ internal static class IslandMeanVisualizer
 {
     private static Material? s_mat;
 
-    public static RenderTexture BuildMeanOverlay(RenderTexture idRT, Vector2[] means, bool useHeatColor = true)
+    public static RenderTexture BuildMeanOverlay(RenderTexture idRT, float[] means, int[] counts, bool useHeatColor = true)
     {
         if (idRT == null) throw new System.ArgumentNullException(nameof(idRT));
         if (means == null || means.Length == 0) throw new System.ArgumentException("means");
+        if (counts == null || counts.Length != means.Length) throw new System.ArgumentException("counts");
 
         var meanTex = new Texture2D(means.Length, 1, TextureFormat.RFloat, false, true)
         {
@@ -23,7 +24,7 @@ internal static class IslandMeanVisualizer
         var cols = new Color[means.Length];
         for (int i = 0; i < means.Length; i++)
         {
-            cols[i] = new Color(Mathf.Clamp01(means[i].x), 0, 0, 1);
+            cols[i] = new Color(Mathf.Clamp01(means[i]), 0, 0, 1);
         }
         meanTex.SetPixels(cols);
         meanTex.Apply(false, false);

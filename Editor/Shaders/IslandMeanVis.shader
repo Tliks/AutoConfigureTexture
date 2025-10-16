@@ -12,7 +12,7 @@ Shader "Hidden/ACT/IslandMeanVis"
             #pragma fragment frag
             #include "UnityCG.cginc"
 
-            sampler2D _IdTex;
+            sampler2D _IdTex; // RFloat。sampler2D でも .r に値が来る
             sampler2D _MeanTex; // width = NumIslands, height=1, R channel = mean
             int _NumIslands;
             float _UseColor; // 1: heatmap, 0: grayscale
@@ -32,8 +32,8 @@ Shader "Hidden/ACT/IslandMeanVis"
             fixed4 frag(v2f_img i) : SV_Target
             {
                 float2 uv = i.uv;
-                float4 idc = tex2D(_IdTex, uv);
-                uint id = (uint)round(idc.r*255.0) | ((uint)round(idc.g*255.0) << 8) | ((uint)round(idc.b*255.0) << 16);
+                float idVal = tex2D(_IdTex, uv).r;
+                uint id = (uint)round(idVal);
                 if (id == 0u) return float4(0,0,0,1);
                 int idx = (int)id - 1;
                 if (idx < 0 || idx >= _NumIslands) return float4(0,0,0,1);

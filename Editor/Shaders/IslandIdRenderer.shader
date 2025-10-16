@@ -30,11 +30,9 @@ Shader "Hidden/ACT/IslandIdRenderer"
             }
             float4 frag(v2f i) : SV_Target
             {
-                uint id = (uint)round(_IslandId);
-                float r = (id & 255u) / 255.0;
-                float g = ((id >> 8) & 255u) / 255.0;
-                float b = ((id >> 16) & 255u) / 255.0;
-                return float4(r, g, b, 1.0);
+                // RFloat ターゲットに ID をそのまま書き込む（ガンマ非依存）
+                float id = round(_IslandId);
+                return float4(id, 0.0, 0.0, 1.0);
             }
             ENDHLSL
         }

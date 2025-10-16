@@ -8,6 +8,7 @@ internal class TextureInfoCollector
 
     public IEnumerable<TextureInfo> Execute(GameObject root)
     {
+        if (root == null) return System.Array.Empty<TextureInfo>();
         var materialInfos = CollectMaterialInfos(root);
         var textureInfos = CollectTextureInfos(materialInfos);
         return textureInfos;
@@ -15,6 +16,7 @@ internal class TextureInfoCollector
 
     public IEnumerable<MaterialInfo> CollectMaterialInfos(GameObject root)
     {
+        if (root == null) return System.Array.Empty<MaterialInfo>();
         var materialInfos = new Dictionary<Material, MaterialInfo>();
 
         foreach (var renderer in root.GetComponentsInChildren<Renderer>(true))

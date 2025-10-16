@@ -7,16 +7,21 @@
 // Atomic ops are only supported for int/uint. Use fixed-point for delta sum.
 // Flat buffer: [island0_sumFixed, island0_count, island1_sumFixed, island1_count, ...]
 RWStructuredBuffer<uint> _IslandSums;
+// Debug: count how many window centers see id>0
+RWStructuredBuffer<uint> _DebugCounter;
 
 Texture2D<float4> _SrcTex;
 SamplerState sampler_linear_clamp;
-Texture2D<float4> _IdTex;
+// ID は RFloat（r32f）で格納。SRV は Texture2D<float> として一致させる
+Texture2D<float> _IdTex;
+SamplerState sampler_point_clamp;
 
 int2 _TexSize;
 int _Window;     // odd window size, e.g., 11
 int _Stride;     // sampling stride, e.g., 2
 int _MipLevel;   // mip for downsampled reference
 int _NumIslands; // N
+int2 _OutSize;   // output grid size (outW, outH)
 
 static const float C1 = 0.01 * 0.01;
 static const float C2 = 0.03 * 0.03;
@@ -27,12 +32,10 @@ float luminance(float3 c)
     return dot(c, float3(0.299, 0.587, 0.114));
 }
 
-uint decodeId24(float4 c)
+// RFloat からそのまま整数IDに丸める
+uint decodeId(float idVal)
 {
-    uint r = (uint)round(saturate(c.r) * 255.0);
-    uint g = (uint)round(saturate(c.g) * 255.0);
-    uint b = (uint)round(saturate(c.b) * 255.0);
-    return r | (g << 8) | (b << 16);
+    return (uint)round(idVal);
 }
 
 [numthreads(8, 8, 1)]
@@ -52,10 +55,19 @@ void CSMain(uint3 tid : SV_DispatchThreadID)
     if (gx < half || gy < half || gx >= size.x - half || gy >= size.y - half)
         return;
 
-    // Determine island id at window center
-    float4 idc = _IdTex.Load(int3(gx, gy, 0));
-    uint id = decodeId24(idc);
-    if (id == 0u) return; // outside
+    // Cull threads outside output grid
+    if (outX >= _OutSize.x || outY >= _OutSize.y) return;
+
+    // Determine island id at window center (RFloat)
+    float idVal = _IdTex.Load(int3(gx, gy, 0));
+    uint id = decodeId(idVal);
+    if (id == 0u)
+    {
+        // debug: still track zeros? skip for now
+        return;
+    }
+    // debug: count positive-id centers
+    InterlockedAdd(_DebugCounter[0], 1u);
     if ((int)id < 1 || (int)id > _NumIslands) return;
     int bin = (int)id - 1;
 

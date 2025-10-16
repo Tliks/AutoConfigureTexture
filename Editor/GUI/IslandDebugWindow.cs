@@ -7,7 +7,8 @@ namespace com.aoyon.AutoConfigureTexture.GUI
 	internal sealed class IslandDebugWindow : EditorWindow
 	{
 		private GameObject? _root;
-		private Texture2D? _texture;
+		private TextureInfo[]? _textureInfos;
+		private int _selectedTextureIndex = 0;
 
 		private TextureInfo? _textureInfo;
 		private Island[]? _islands;
@@ -17,8 +18,7 @@ namespace com.aoyon.AutoConfigureTexture.GUI
 		private RenderTexture? _meanOverlayRT;
 
 		private Vector2 _scroll;
-		private float[] _lastMeans = System.Array.Empty<float>();
-		private int[] _lastCounts = System.Array.Empty<int>();
+
 
 		[MenuItem("Tools/AutoConfigureTexture/Island Debugger")]
 		private static void Open()
@@ -29,16 +29,18 @@ namespace com.aoyon.AutoConfigureTexture.GUI
 		private void OnGUI()
 		{
 			EditorGUILayout.LabelField("Island Debug / RenderTexture Preview", EditorStyles.boldLabel);
-			_root = (GameObject)EditorGUILayout.ObjectField("Root", _root, typeof(GameObject), true);
-			_texture = (Texture2D)EditorGUILayout.ObjectField("Source Texture", _texture, typeof(Texture2D), false);
+			var newRoot = (GameObject)EditorGUILayout.ObjectField("Root", _root, typeof(GameObject), true);
+			if (newRoot != _root)
+			{
+				_root = newRoot;
+				OnRootChanged(newRoot);
+			}
 
-			using (new EditorGUI.DisabledScope(_texture == null || _root == null))
+			DrawTextureSelection();
+
+			using (new EditorGUI.DisabledScope(_textureInfo == null || _root == null))
 			{
 				EditorGUILayout.Space();
-				if (GUILayout.Button("0) Collect Data"))
-				{
-					CollectData();
-				}
 				if (GUILayout.Button("1) Build & Preview IslandId RT"))
 				{
 					BuildAndPreviewIdRT();
@@ -58,16 +60,41 @@ namespace com.aoyon.AutoConfigureTexture.GUI
 			DrawPreview();
 			EditorGUILayout.EndScrollView();
 		}
-
-		private void CollectData()
+		
+		private void OnRootChanged(GameObject newRoot)
 		{
-			if (_root == null || _texture == null) return;
+			_root = newRoot;
 			var collector = new TextureInfoCollector();
-			var textureInfos = collector.Execute(_root);
-			_textureInfo = textureInfos.First(info => info.Texture2D == _texture);
-			if (_textureInfo == null) return;
+			_textureInfos = collector.Execute(_root).ToArray();
+			_selectedTextureIndex = 0;
+		}
+
+		private void DrawTextureSelection()
+		{
+			if (_textureInfos == null || _textureInfos.Length == 0) return;
+			string[] textureNames = _textureInfos.Select(info => $"{info.Texture2D.name} ({info.Texture2D.width}x{info.Texture2D.height})").ToArray();
+			int newSelectedIndex = EditorGUILayout.Popup("Source Texture", _selectedTextureIndex, textureNames);
+			if (newSelectedIndex != _selectedTextureIndex)
+			{
+				OnTextureSelected(newSelectedIndex);
+			}
+		}
+
+		private void OnTextureSelected(int newSelectedIndex)
+		{
+			if (_textureInfos == null || _textureInfos.Length == 0) return;
+			_selectedTextureIndex = newSelectedIndex;
+			_textureInfo = _textureInfos[_selectedTextureIndex];
+			// Recalculate islands for the new texture
 			var (islands, _) = IslandCalculator.CalculateIslandsFor(_textureInfo);
 			_islands = islands;
+			// Clear cached data
+			_idRT?.Release();
+			_idRT = null;
+			_maskRT?.Release();
+			_maskRT = null;
+			_meanOverlayRT?.Release();
+			_meanOverlayRT = null;
 		}
 
 		private void BuildAndPreviewIdRT()
@@ -75,15 +102,16 @@ namespace com.aoyon.AutoConfigureTexture.GUI
 			if (_textureInfo == null || _islands == null) return;
 			var svc = new IslandMaskService();
 			_idRT = svc.BuildIslandIdMapRT(_textureInfo.Texture2D, _islands);
+			IslandMaskService.DebugIDRT(_idRT, srcName: _textureInfo.Texture2D.name, islandCount: _islands.Length);
 		}
 
 		private void DrawAllIsland()
 		{
-			if (_texture == null || _islands == null) return;
+			if (_textureInfo == null || _islands == null) return;
 			if (_islands.Length == 0) { Debug.LogWarning("[ACT][IslandDebug] No islands"); return; }
 			if (_maskRT == null)
 			{
-				_maskRT = new RenderTexture(_texture.width, _texture.height, 0, RenderTextureFormat.ARGB32);
+				_maskRT = new RenderTexture(_textureInfo.Texture2D.width, _textureInfo.Texture2D.height, 0, RenderTextureFormat.ARGB32);
 				_maskRT.filterMode = FilterMode.Point;
 				_maskRT.wrapMode = TextureWrapMode.Clamp;
 				_maskRT.Create();
@@ -95,41 +123,23 @@ namespace com.aoyon.AutoConfigureTexture.GUI
 
 		private void RunIslandSSIM()
 		{
-			if (_texture == null || _islands == null || _idRT == null) return;
+			if (_textureInfo == null || _islands == null || _idRT == null) return;
 			var eval = new IslandSSIMEvaluator();
-			float[] scales = new float[] { 0.5f, 0.25f, 0.125f, 0.0625f };
-			for (int si = 0; si < scales.Length; si++)
-			{
-				int mip = ComputeMipLevelForScale(_texture, scales[si]);
-				var res = eval.Evaluate(_texture, _idRT, mip, 11, 2, _islands.Length);
-				_lastMeans = new float[res.Length];
-				_lastCounts = new int[res.Length];
-				for (int i = 0; i < res.Length; i++) { _lastMeans[i] = res[i].x; _lastCounts[i] = (int)res[i].y; }
-				Debug.Log($"[ACT][IslandSSIM] {_texture.name} s={scales[si]:0.###} mip={mip} islands={_islands.Length}");
-				for (int i = 0; i < Mathf.Min(16, res.Length); i++)
-				{
-					Debug.Log($"  #{i+1}: mean={res[i].x:0.###} n={(int)res[i].y}");
-				}
-				_meanOverlayRT = IslandMeanVisualizer.BuildMeanOverlay(_idRT, res, useHeatColor: false);
-			}
-		}
-
-		private static int ComputeMipLevelForScale(Texture2D src, float scale)
-		{
-			int upW = src.width;
-			int downW = Mathf.Max(1, Mathf.RoundToInt(upW * Mathf.Clamp(scale, 1e-6f, 1f)));
-			int mipLevel = 0;
-			int sx = Mathf.Max(1, upW / downW);
-			while ((1 << mipLevel) < sx) mipLevel++;
-			return Mathf.Max(1, mipLevel);
+			var (means, counts) = eval.Evaluate(_textureInfo.Texture2D, _idRT, 0, 7, 1, _islands.Length);
+			_meanOverlayRT = IslandMeanVisualizer.BuildMeanOverlay(_idRT, means, counts, useHeatColor: false);
+			
+			int nonzeroCount = counts.Count(c => c > 0);
+			int totalCount = counts.Sum();
+			var first16 = means.Take(16).Select((m, i) => $"{i + 1}:{m:F4}(cnt={counts[i]})");
+			Debug.Log($"[ACT][IslandSSIM] islands={_islands.Length}, nonzero={nonzeroCount}, totalWindows={totalCount}\n  first16: {string.Join(" ", first16)}");
 		}
 
 		private void DrawPreview()
 		{
-			if (_texture == null && _idRT == null && _maskRT == null && _meanOverlayRT == null) return;
+			if (_textureInfo == null && _idRT == null && _maskRT == null && _meanOverlayRT == null) return;
 
 			string[] labels = { "Original", "ID Map", "Mask", "Mean Overlay" };
-			Texture?[] textures = { _texture, _idRT, _maskRT, _meanOverlayRT };
+			Texture?[] textures = { _textureInfo?.Texture2D, _idRT, _maskRT, _meanOverlayRT };
 
 			float previewMaxSize = 400f;
 			int cols = 2;
