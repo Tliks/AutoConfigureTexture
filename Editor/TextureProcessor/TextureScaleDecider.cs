@@ -2,7 +2,7 @@ namespace com.aoyon.AutoConfigureTexture.Processor;
 
 internal sealed class TextureScaleDecider
 {
-	private readonly IslandMaskService _maskService = new();
+	private readonly IslandTextureService _maskService = new();
 
 	public struct Result
 	{
@@ -24,20 +24,21 @@ internal sealed class TextureScaleDecider
 		)
     {
         var results = new List<Result>(items.Count);
+        using var islandCalculator = new IslandCalculator();
         foreach (var info in items)
         {
             var tex = info.Texture2D;
             if (tex == null) { continue; }
             long bytes = MathHelper.ComputeVRAMSize(tex, tex.format);
 
-            var (islands, _) = IslandCalculator.CalculateIslandsFor(info);
+            var (islands, _) = islandCalculator.CalculateIslandsFor(info);
             if (islands.Length == 0)
             {
                 results.Add(new Result { Texture = tex, SelectedDownScaleLevel = 0, SavedBytes = 0, Reason = "no-islands" });
                 continue;
             }
 
-            var idRT = _maskService.BuildIslandIdMapRT(tex, islands);
+            var idRT = _maskService.BuildIDMap(tex, islands);
 			var ssimEval = new IslandSSIMEvaluator();
             try
             {

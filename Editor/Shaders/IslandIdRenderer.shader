@@ -1,43 +1,26 @@
 Shader "Hidden/ACT/IslandIdRenderer"
 {
-    Properties {}
     SubShader
     {
-        Tags { "RenderType"="Opaque" "Queue"="Geometry" }
         Cull Off ZWrite Off ZTest Always
         Pass
         {
-            HLSLPROGRAM
+            CGPROGRAM
             #pragma vertex vert
             #pragma fragment frag
             #include "UnityCG.cginc"
-            struct appdata
-            {
-                float3 vertex : POSITION;
-            };
-            struct v2f
-            {
-                float4 pos : SV_POSITION;
-            };
+
             float _IslandId;
-            v2f vert(appdata v)
+
+            float4 vert(float4 vertex : POSITION) : SV_POSITION
             {
-                v2f o;
-                // VP=Ortho(0..1) を CommandBuffer 側でセットしている前提。
-                // ここではそのままVPを適用するだけ。
-                o.pos = mul(UNITY_MATRIX_VP, float4(v.vertex.xy, 0, 1));
-                return o;
+                return UnityObjectToClipPos(vertex);
             }
-            float4 frag(v2f i) : SV_Target
+            float4 frag(float4 vertex : SV_POSITION) : SV_TARGET
             {
-                // RFloat ターゲットに ID をそのまま書き込む（ガンマ非依存）
-                float id = round(_IslandId);
-                return float4(id, 0.0, 0.0, 1.0);
+                return float4(round(_IslandId), 0, 0, 1);
             }
-            ENDHLSL
+            ENDCG
         }
     }
 }
-
-
-

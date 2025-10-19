@@ -86,7 +86,9 @@ namespace com.aoyon.AutoConfigureTexture.GUI
 			_selectedTextureIndex = newSelectedIndex;
 			_textureInfo = _textureInfos[_selectedTextureIndex];
 			// Recalculate islands for the new texture
-			var (islands, _) = IslandCalculator.CalculateIslandsFor(_textureInfo);
+			using var stopwatch = new ProfilerScope("CalculateIslandsFor");
+			using var islandCalculator = new IslandCalculator();
+			var (islands, _) = islandCalculator.CalculateIslandsFor(_textureInfo);
 			_islands = islands;
 			// Clear cached data
 			_idRT?.Release();
@@ -100,9 +102,10 @@ namespace com.aoyon.AutoConfigureTexture.GUI
 		private void BuildAndPreviewIdRT()
 		{
 			if (_textureInfo == null || _islands == null) return;
-			var svc = new IslandMaskService();
-			_idRT = svc.BuildIslandIdMapRT(_textureInfo.Texture2D, _islands);
-			IslandMaskService.DebugIDRT(_idRT, srcName: _textureInfo.Texture2D.name, islandCount: _islands.Length);
+			using var stopwatch = new ProfilerScope("BuildIDMap");
+			var svc = new IslandTextureService();
+			_idRT = svc.BuildIDMap(_textureInfo.Texture2D, _islands);
+			// IslandTextureService.DebugIDRT(_idRT, _textureInfo.Texture2D.name);
 		}
 
 		private void DrawAllIsland()
@@ -116,7 +119,7 @@ namespace com.aoyon.AutoConfigureTexture.GUI
 				_maskRT.wrapMode = TextureWrapMode.Clamp;
 				_maskRT.Create();
 			}
-			var svc = new IslandMaskService();
+			var svc = new IslandTextureService();
 			svc.DrawAllIsland(_maskRT, _islands);
 			Repaint();
 		}
