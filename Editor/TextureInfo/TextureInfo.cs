@@ -7,19 +7,18 @@ internal class TextureInfo
 {
     public readonly Texture2D Texture2D;
     public readonly TextureFormat Format;
+    public readonly int MipCount;
 
     private readonly List<PropertyInfo> _referencedProperties = new();
     public IReadOnlyList<PropertyInfo> ReferencedProperties => _referencedProperties;
 
     public readonly TextureImportedInfo? ImportedInfo;
 
-    private Texture2D? _readableTexture = null;
-    public Texture2D ReadableTexture => EnsureReadableTexture2D();
-
     public TextureInfo(Texture2D texture)
     {
         Texture2D = texture;
         Format = texture.format;
+        MipCount = texture.mipmapCount;
         _referencedProperties = new List<PropertyInfo>();
 
         var importer = AssetImporter.GetAtPath(AssetDatabase.GetAssetPath(texture));
@@ -33,16 +32,6 @@ internal class TextureInfo
     {
         _referencedProperties.Add(propertyInfo);
     }
-
-    private Texture2D EnsureReadableTexture2D()
-    {
-        if (_readableTexture == null)
-        {
-            _readableTexture = TextureUtility.EnsureReadableTexture2D(Texture2D);
-        }
-        return _readableTexture;
-    }
-
     public override string ToString()
     {
         var sb = new System.Text.StringBuilder();

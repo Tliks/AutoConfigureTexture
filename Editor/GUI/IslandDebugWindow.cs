@@ -1,29 +1,31 @@
-using UnityEditor;
-using UnityEngine;
 using com.aoyon.AutoConfigureTexture.Processor;
 
 namespace com.aoyon.AutoConfigureTexture.GUI
 {
 	internal sealed class IslandDebugWindow : EditorWindow
 	{
-		private GameObject? _root = null;
-		private TextureInfo[]? _textureInfos = null;
-		private int _selectedTextureIndex = 0;
+		private GameObject? _root;
+		private TextureInfo[]? _textureInfos;
+		private int _selectedTextureIndex;
+		private int _selectedMipLevel;
 
-		private TextureInfo? _textureInfo = null;
-		private Island[]? _islands = null;
+		private TextureInfo? _textureInfo;
+		private Island[]? _islands;
+		private Texture2D? _mipMapTexture;
 
-		private RenderTexture? _idRT = null;
-		private RenderTexture? _maskRT = null;
-		private RenderTexture? _meanOverlayRT = null;
-
-		private Vector2 _scroll = Vector2.zero;
+		private RenderTexture? _idRT;
+		private RenderTexture? _meanOverlayRT;
 
 
 		[MenuItem("Tools/AutoConfigureTexture/Island Debugger")]
 		private static void Open()
 		{
 			GetWindow<IslandDebugWindow>("Island Debugger");
+		}
+
+		private void OnEnable()
+		{
+			OnRootChanged(_root);
 		}
 
 		private void OnGUI()
@@ -36,16 +38,14 @@ namespace com.aoyon.AutoConfigureTexture.GUI
 			DrawTextureSelection();
 			if (_textureInfo == null) return;
 
+			DrawParameterSelection();
+
 			EditorGUILayout.Space();
-			if (GUILayout.Button("1) Build & Preview IslandId RT"))
+			if (GUILayout.Button("Build IslandId RT"))
 			{
 				BuildAndPreviewIdRT();
 			}
-			if (GUILayout.Button("1b) Draw All Islands (sanity)"))
-			{
-				DrawAllIsland();
-			}
-			if (GUILayout.Button("2) Run Island SSIM (all candidate scales)"))
+			if (GUILayout.Button("Run Island SSIM"))
 			{
 				RunIslandSSIM();
 			}
@@ -64,12 +64,13 @@ namespace com.aoyon.AutoConfigureTexture.GUI
 			}
 		}
 		
-		private void OnRootChanged(GameObject newRoot)
+		private void OnRootChanged(GameObject? newRoot)
 		{
 			_root = newRoot;
+			if (_root == null) return;
 			var collector = new TextureInfoCollector();
 			_textureInfos = collector.Execute(_root).ToArray();
-			_selectedTextureIndex = 0;
+			OnTextureSelected(0);
 		}
 
 		private void DrawTextureSelection()
@@ -93,19 +94,37 @@ namespace com.aoyon.AutoConfigureTexture.GUI
 			var (islands, _) = islandCalculator.CalculateIslandsFor(_textureInfo);
 			Debug.Log($"[ACT][IslandDebug] islands={islands.Length}");
 			_islands = islands;
-			// Clear cached data
+			OnMipLevelChanged(_selectedMipLevel);
 			if (_idRT != null){
 				_idRT.Release();
 				_idRT = null;
-			}
-			if (_maskRT != null){
-				_maskRT.Release();
-				_maskRT = null;
 			}
 			if (_meanOverlayRT != null){
 				_meanOverlayRT.Release();
 				_meanOverlayRT = null;
 			}
+		}
+
+		private void DrawParameterSelection()
+		{
+			if (_textureInfo != null)
+			{
+				var newMipLevel = EditorGUILayout.IntSlider("Mip Level", _selectedMipLevel, 0, _textureInfo.MipCount - 1);
+				if (newMipLevel != _selectedMipLevel)
+				{
+					OnMipLevelChanged(newMipLevel);
+				}
+			}
+		}
+
+		private void OnMipLevelChanged(int newMipLevel)
+		{
+			_mipMapTexture = null;
+			if (_textureInfo == null) return;
+			_selectedMipLevel = newMipLevel;
+			var impoeredInfo = _textureInfo.ImportedInfo;
+			if (impoeredInfo == null) throw new InvalidOperationException("importedInfo is null");
+			_mipMapTexture = TextureUtility.GetMipMapTexture2D(_textureInfo.Texture2D, _selectedMipLevel, impoeredInfo.sRGBTexture);
 		}
 
 		private void BuildAndPreviewIdRT()
@@ -117,28 +136,12 @@ namespace com.aoyon.AutoConfigureTexture.GUI
 			// IslandTextureService.DebugIDRT(_idRT, _textureInfo.Texture2D.name);
 		}
 
-		private void DrawAllIsland()
-		{
-			if (_textureInfo == null || _islands == null) throw new InvalidOperationException("textureInfo or islands is null");
-			if (_islands.Length == 0) { Debug.LogWarning("[ACT][IslandDebug] No islands"); return; }
-			if (_maskRT == null)
-			{
-				_maskRT = new RenderTexture(_textureInfo.Texture2D.width, _textureInfo.Texture2D.height, 0, RenderTextureFormat.ARGB32);
-				_maskRT.filterMode = FilterMode.Point;
-				_maskRT.wrapMode = TextureWrapMode.Clamp;
-				_maskRT.Create();
-			}
-			var svc = new IslandTextureService();
-			svc.DrawAllIsland(_maskRT, _islands);
-			Repaint();
-		}
-
 		private void RunIslandSSIM()
 		{
 			if (_textureInfo == null || _islands == null || _idRT == null) throw new InvalidOperationException("textureInfo or islands or idRT is null");
 			var eval = new IslandSSIMEvaluator();
-			var (means, counts) = eval.Evaluate(_textureInfo.Texture2D, _idRT, 0, 7, 1, _islands.Length);
-			_meanOverlayRT = new IslandMeanVisualizer().BuildMeanOverlay(_idRT, means, counts, useHeatColor: false);
+			var (means, counts) = eval.Evaluate(_textureInfo.Texture2D, _idRT, _selectedMipLevel, _islands.Length);
+			_meanOverlayRT = new IslandMeanVisualizer().BuildMeanOverlay(_idRT, means, counts, useHeatColor: true);
 			
 			int nonzeroCount = counts.Count(c => c > 0);
 			int totalCount = counts.Sum();
@@ -148,10 +151,10 @@ namespace com.aoyon.AutoConfigureTexture.GUI
 
 		private void DrawPreview()
 		{
-			if (_textureInfo == null && _idRT == null && _maskRT == null && _meanOverlayRT == null)
+			if (_textureInfo == null && _mipMapTexture == null && _idRT == null && _meanOverlayRT == null)
 				return;
 
-			Texture?[] textures = { _textureInfo?.Texture2D, _idRT, _maskRT, _meanOverlayRT };
+			Texture?[] textures = { _textureInfo?.Texture2D, _mipMapTexture, _idRT, _meanOverlayRT};
 
 			int cols = 2;
 			int rows = 2;

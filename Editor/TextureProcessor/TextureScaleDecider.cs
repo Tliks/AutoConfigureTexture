@@ -43,7 +43,7 @@ internal sealed class TextureScaleDecider
             var ssimMeans = new List<float[]>(maxDownScaleLevel);
             for (int si = 0; si < maxDownScaleLevel; si++)
             {
-                var (means, counts) = ssimEval.Evaluate(tex, idRT.Value, si, window: 11, stride: 2, numIslands: islands.Length);
+                var (means, counts) = ssimEval.Evaluate(tex, idRT.Value, si, islands.Length);
                 ssimMeans[si] = means;
             }
         }

@@ -1,99 +1,54 @@
 #pragma kernel CSMain
-#pragma target 5.0
-
-// Compute per-island SSIM deltas in a single pass using an IslandId map.
-// For each output window center, we compute SSIM between base level and a downsampled mip level
-// and atomically accumulate (delta, weight) into per-island bins based on the island id at the window center.
-
-// Atomic ops are only supported for int/uint. Use fixed-point for delta sum.
-// Flat buffer: [island0_sumFixed, island0_count, island1_sumFixed, island1_count, ...]
-RWStructuredBuffer<uint> _IslandSums;
-// Debug: count how many window centers see id>0
-RWStructuredBuffer<uint> _DebugZeroCounter;
-RWStructuredBuffer<uint> _DebugNonZeroCounter;
 
 Texture2D<float4> _SrcTex;
-SamplerState sampler_linear_clamp;
-// ID は RFloat（r32f）で格納。SRV は Texture2D<float> として一致させる
-Texture2D<float> _IdTex;
-SamplerState sampler_point_clamp;
-
 int2 _TexSize;
-int _Window;     // odd window size, e.g., 11
-int _Stride;     // sampling stride, e.g., 2
-int _MipLevel;   // mip for downsampled reference
-int _NumIslands; // N
-int2 _OutSize;   // output grid size (outW, outH)
+
+uint _MipLevel;
+
+uint _Window;
+
+Texture2D<float> _IdTex;
+
+RWStructuredBuffer<uint> _IslandSums;
+
+RWStructuredBuffer<uint> _DebugZeroCounter;
+RWStructuredBuffer<uint> _DebugNonZeroCounter;
 
 static const float C1 = 0.01 * 0.01;
 static const float C2 = 0.03 * 0.03;
 
+
 float luminance(float3 c)
 {
-    // sRGB-like luma approximation (no gamma correction for speed)
     return dot(c, float3(0.299, 0.587, 0.114));
 }
 
-// RFloat からそのまま整数IDに丸める
-uint decodeId(float idVal)
+uint SSIMToFixed(float ssim)
 {
-    return (uint)round(idVal);
+    ssim = clamp(ssim, 0.0, 1.0);
+    return (uint)(ssim * 100.0);
 }
 
-[numthreads(8, 8, 1)]
-void CSMain(uint3 tid : SV_DispatchThreadID)
+float ComputeSSIM(int2 center)
 {
-    InterlockedAdd(_DebugZeroCounter[0], 1u);
-
-    // Output grid size derived by C#; here we map thread to a window center
-    int outX = tid.x;
-    int outY = tid.y;
-
-
-    int step = max(1, _Stride);
-    int win  = max(1, _Window);
-    int half = win / 2;
-
-    int2 size = _TexSize;
-    int gx = outX * step + half;
-    int gy = outY * step + half;
-
-    InterlockedAdd(_DebugZeroCounter[0], 1u);
-
-    if (gx < half || gy < half || gx >= size.x - half || gy >= size.y - half)
-        //return;
-
-    // Cull threads outside output grid
-    if (outX >= _OutSize.x || outY >= _OutSize.y) //return;
-
-    // Determine island id at window center (RFloat)
-    float idVal = _IdTex.Load(int3(gx, gy, 0));
-    uint id = decodeId(idVal);
-    if (id == 0u)
-    {
-        // debug: still track zeros? skip for now
-        InterlockedAdd(_DebugZeroCounter[0], 1u);
-        return;
-    }
-    // debug: count positive-id centers
-    InterlockedAdd(_DebugNonZeroCounter[0], 1u);
-    if ((int)id < 1 || (int)id > _NumIslands) //return;
-    int bin = (int)id - 1;
-
-    // Compute stats over window for base (L0) and downsampled mip (_MipLevel)
     float sumX = 0.0, sumY = 0.0;
     float sumX2 = 0.0, sumY2 = 0.0, sumXY = 0.0;
-    int count = 0;
-    int scale = 1 << max(0, _MipLevel);
+    uint count = 0u;
+    uint scale = (uint)(1 << max(0, _MipLevel));
 
-    for (int dy = -half; dy <= half; dy++)
+    int halfWindow = _Window / 2;
+    int centerY = center.y;
+    int centerX = center.x;
+    for (int dy = -halfWindow; dy <= halfWindow; dy++)
     {
-        int yy = gy + dy;
-        int yyL = yy / scale;
-        for (int dx = -half; dx <= half; dx++)
+        int yy = centerY + dy;
+        if (yy < 0 || yy >= _TexSize.y) continue;
+        uint yyL = (uint)yy / scale;
+        for (int dx = -halfWindow; dx <= halfWindow; dx++)
         {
-            int xx = gx + dx;
-            int xxL = xx / scale;
+            int xx = centerX + dx;
+            if (xx < 0 || xx >= _TexSize.x) continue;
+            uint xxL = (uint)xx / scale;
 
             float3 a = _SrcTex.Load(int3(xx, yy, 0)).rgb;
             float3 b = _SrcTex.Load(int3(xxL, yyL, _MipLevel)).rgb;
@@ -108,7 +63,8 @@ void CSMain(uint3 tid : SV_DispatchThreadID)
         }
     }
 
-    if (count <= 0) return;
+    if (count == 0u) return 0.0; // Todo pixelが0のアイランドを適切に除外する？
+    
     float invN = 1.0 / (float)count;
     float muX = sumX * invN;
     float muY = sumY * invN;
@@ -116,16 +72,38 @@ void CSMain(uint3 tid : SV_DispatchThreadID)
     float varY = sumY2 * invN - muY * muY;
     float covXY = sumXY * invN - muX * muY;
 
-    float ssim = ((2.0 * muX * muY + C1) * (2.0 * covXY + C2)) / ((muX * muX + muY * muY + C1) * (varX + varY + C2) + 1e-12);
-    float delta = saturate(1.0 - ssim);
+    float ssim = ((2.0 * muX * muY + C1) * (2.0 * covXY + C2)) / ((muX * muX + muY * muY + C1) * (varX + varY + C2) + 1e-12);    
+    return ssim;
+}
 
-    // Fixed-point scale: 256 (Q8.8) to avoid overflow at large window counts
-    const float FP_SCALE = 256.0;
-    uint deltaFixed = (uint)round(delta * FP_SCALE);
+void AccumulateResult(float ssim, int2 center)
+{
+    float idVal = _IdTex.Load(int3(center.x, center.y, 0));
+    uint id = (uint)round(idVal);
 
+    if (id == 0u)
+    {
+        InterlockedAdd(_DebugZeroCounter[0], 1u);
+        return;
+    }
+    
+    InterlockedAdd(_DebugNonZeroCounter[0], 1u);
+    
+    int bin = (int)id - 1;
     uint baseIndex = (uint)(bin * 2);
+
+    uint deltaFixed = SSIMToFixed(ssim);
     InterlockedAdd(_IslandSums[baseIndex + 0], deltaFixed);
     InterlockedAdd(_IslandSums[baseIndex + 1], 1u);
 }
 
-
+[numthreads(8, 8, 1)]
+void CSMain(uint2 center : SV_DispatchThreadID)
+{
+    if (center.x >= (uint)_TexSize.x || center.y >= (uint)_TexSize.y) return;
+    
+    float ssim = ComputeSSIM(center);
+    if (ssim == 0.0) return;
+    
+    AccumulateResult(ssim, center);
+}
