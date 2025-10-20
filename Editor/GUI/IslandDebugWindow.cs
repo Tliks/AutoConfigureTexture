@@ -89,15 +89,9 @@ namespace com.aoyon.AutoConfigureTexture.GUI
 			_selectedTextureIndex = newSelectedIndex;
 			_textureInfo = _textureInfos[_selectedTextureIndex];
 			// Recalculate islands for the new texture
-<<<<<<< HEAD
 			using var islandCalculator = new IslandCalculator();
 			var (islands, _) = islandCalculator.CalculateIslandsFor(_textureInfo);
 			Debug.Log($"[ACT][IslandDebug] islands={islands.Length}");
-=======
-			using var stopwatch = new ProfilerScope("CalculateIslandsFor");
-			using var islandCalculator = new IslandCalculator();
-			var (islands, _) = islandCalculator.CalculateIslandsFor(_textureInfo);
->>>>>>> 6930537f8074b10252ca30c3cda09fe43b2c5409
 			_islands = islands;
 			// Clear cached data
 			if (_idRT != null){
@@ -116,13 +110,8 @@ namespace com.aoyon.AutoConfigureTexture.GUI
 
 		private void BuildAndPreviewIdRT()
 		{
-<<<<<<< HEAD
 			if (_textureInfo == null || _islands == null) throw new InvalidOperationException("textureInfo or islands is null");
 			using var stopwatch = new Utils.StopwatchScope("BuildIDMap");
-=======
-			if (_textureInfo == null || _islands == null) return;
-			using var stopwatch = new ProfilerScope("BuildIDMap");
->>>>>>> 6930537f8074b10252ca30c3cda09fe43b2c5409
 			var svc = new IslandTextureService();
 			_idRT = svc.BuildIDMap(_textureInfo.Texture2D, _islands);
 			// IslandTextureService.DebugIDRT(_idRT, _textureInfo.Texture2D.name);

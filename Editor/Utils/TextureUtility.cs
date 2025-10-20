@@ -23,12 +23,12 @@ internal static class TextureUtility
                     RenderTextureReadWrite.Linear);
 
         Graphics.Blit(texture2d, renderTexture);
-        RenderTexture previous = RenderTexture.active;
-        RenderTexture.active = renderTexture;
         Texture2D readableTextur2D = new Texture2D(texture2d.width, texture2d.height);
-        readableTextur2D.ReadPixels(new Rect(0, 0, renderTexture.width, renderTexture.height), 0, 0);
+        using (new ActiveRenderTextureScope(renderTexture))
+        {
+            readableTextur2D.ReadPixels(new Rect(0, 0, renderTexture.width, renderTexture.height), 0, 0);
+        }
         readableTextur2D.Apply();
-        RenderTexture.active = previous;
         RenderTexture.ReleaseTemporary(renderTexture);
         Profiler.EndSample();
         return readableTextur2D;

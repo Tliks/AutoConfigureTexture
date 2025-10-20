@@ -1,6 +1,5 @@
 namespace com.aoyon.AutoConfigureTexture;
 
-<<<<<<< HEAD
 
 internal static class Utils
 {
@@ -14,19 +13,6 @@ internal static class Utils
         {
             Profiler.EndSample();
         }
-=======
-internal class ActiveRenderTextureScope : IDisposable
-{
-    private readonly RenderTexture _previous;
-    public ActiveRenderTextureScope(RenderTexture renderTexture)
-    {
-        _previous = RenderTexture.active;
-        RenderTexture.active = renderTexture;
-    }
-    public void Dispose()
-    {
-        RenderTexture.active = _previous;
->>>>>>> 6930537f8074b10252ca30c3cda09fe43b2c5409
     }
 
     public class StopwatchScope : IDisposable

@@ -15,11 +15,8 @@ internal sealed class IslandTextureService
 
     public RenderTexture BuildIDMap(Texture2D src, IReadOnlyList<Island> islands)
     {
-<<<<<<< HEAD
         Profiler.BeginSample("IslandTextureService.BuildIDMap.Init");
 
-=======
->>>>>>> 6930537f8074b10252ca30c3cda09fe43b2c5409
         var idRT = new RenderTexture(src.width, src.height, 0, RenderTextureFormat.RFloat, RenderTextureReadWrite.Linear)
         {
             enableRandomWrite = true
@@ -62,11 +59,8 @@ internal sealed class IslandTextureService
             if (created[i] != null) Object.DestroyImmediate(created[i]);
         }
         Object.DestroyImmediate(mat);
-<<<<<<< HEAD
         Profiler.EndSample();
 
-=======
->>>>>>> 6930537f8074b10252ca30c3cda09fe43b2c5409
         return idRT;
     }
 
