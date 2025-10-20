@@ -6,18 +6,18 @@ namespace com.aoyon.AutoConfigureTexture.GUI
 {
 	internal sealed class IslandDebugWindow : EditorWindow
 	{
-		private GameObject? _root;
-		private TextureInfo[]? _textureInfos;
+		private GameObject? _root = null;
+		private TextureInfo[]? _textureInfos = null;
 		private int _selectedTextureIndex = 0;
 
-		private TextureInfo? _textureInfo;
-		private Island[]? _islands;
+		private TextureInfo? _textureInfo = null;
+		private Island[]? _islands = null;
 
-		private RenderTexture? _idRT;
-		private RenderTexture? _maskRT;
-		private RenderTexture? _meanOverlayRT;
+		private RenderTexture? _idRT = null;
+		private RenderTexture? _maskRT = null;
+		private RenderTexture? _meanOverlayRT = null;
 
-		private Vector2 _scroll;
+		private Vector2 _scroll = Vector2.zero;
 
 
 		[MenuItem("Tools/AutoConfigureTexture/Island Debugger")]
@@ -29,36 +29,39 @@ namespace com.aoyon.AutoConfigureTexture.GUI
 		private void OnGUI()
 		{
 			EditorGUILayout.LabelField("Island Debug / RenderTexture Preview", EditorStyles.boldLabel);
+
+			DrawRootSelection();
+			if (_root == null) return;
+
+			DrawTextureSelection();
+			if (_textureInfo == null) return;
+
+			EditorGUILayout.Space();
+			if (GUILayout.Button("1) Build & Preview IslandId RT"))
+			{
+				BuildAndPreviewIdRT();
+			}
+			if (GUILayout.Button("1b) Draw All Islands (sanity)"))
+			{
+				DrawAllIsland();
+			}
+			if (GUILayout.Button("2) Run Island SSIM (all candidate scales)"))
+			{
+				RunIslandSSIM();
+			}
+
+			DrawPreview();
+		}
+
+
+		private void DrawRootSelection()
+		{
 			var newRoot = (GameObject)EditorGUILayout.ObjectField("Root", _root, typeof(GameObject), true);
 			if (newRoot != _root)
 			{
 				_root = newRoot;
 				OnRootChanged(newRoot);
 			}
-
-			DrawTextureSelection();
-
-			using (new EditorGUI.DisabledScope(_textureInfo == null || _root == null))
-			{
-				EditorGUILayout.Space();
-				if (GUILayout.Button("1) Build & Preview IslandId RT"))
-				{
-					BuildAndPreviewIdRT();
-				}
-				if (GUILayout.Button("1b) Draw All Islands (sanity)"))
-				{
-					DrawAllIsland();
-				}
-				if (GUILayout.Button("2) Run Island SSIM (all candidate scales)"))
-				{
-					RunIslandSSIM();
-				}
-			}
-
-			EditorGUILayout.Space();
-			_scroll = EditorGUILayout.BeginScrollView(_scroll);
-			DrawPreview();
-			EditorGUILayout.EndScrollView();
 		}
 		
 		private void OnRootChanged(GameObject newRoot)
@@ -86,28 +89,48 @@ namespace com.aoyon.AutoConfigureTexture.GUI
 			_selectedTextureIndex = newSelectedIndex;
 			_textureInfo = _textureInfos[_selectedTextureIndex];
 			// Recalculate islands for the new texture
-			var (islands, _) = IslandCalculator.CalculateIslandsFor(_textureInfo);
+<<<<<<< HEAD
+			using var islandCalculator = new IslandCalculator();
+			var (islands, _) = islandCalculator.CalculateIslandsFor(_textureInfo);
+			Debug.Log($"[ACT][IslandDebug] islands={islands.Length}");
+=======
+			using var stopwatch = new ProfilerScope("CalculateIslandsFor");
+			using var islandCalculator = new IslandCalculator();
+			var (islands, _) = islandCalculator.CalculateIslandsFor(_textureInfo);
+>>>>>>> 6930537f8074b10252ca30c3cda09fe43b2c5409
 			_islands = islands;
 			// Clear cached data
-			_idRT?.Release();
-			_idRT = null;
-			_maskRT?.Release();
-			_maskRT = null;
-			_meanOverlayRT?.Release();
-			_meanOverlayRT = null;
+			if (_idRT != null){
+				_idRT.Release();
+				_idRT = null;
+			}
+			if (_maskRT != null){
+				_maskRT.Release();
+				_maskRT = null;
+			}
+			if (_meanOverlayRT != null){
+				_meanOverlayRT.Release();
+				_meanOverlayRT = null;
+			}
 		}
 
 		private void BuildAndPreviewIdRT()
 		{
+<<<<<<< HEAD
+			if (_textureInfo == null || _islands == null) throw new InvalidOperationException("textureInfo or islands is null");
+			using var stopwatch = new Utils.StopwatchScope("BuildIDMap");
+=======
 			if (_textureInfo == null || _islands == null) return;
-			var svc = new IslandMaskService();
-			_idRT = svc.BuildIslandIdMapRT(_textureInfo.Texture2D, _islands);
-			IslandMaskService.DebugIDRT(_idRT, srcName: _textureInfo.Texture2D.name, islandCount: _islands.Length);
+			using var stopwatch = new ProfilerScope("BuildIDMap");
+>>>>>>> 6930537f8074b10252ca30c3cda09fe43b2c5409
+			var svc = new IslandTextureService();
+			_idRT = svc.BuildIDMap(_textureInfo.Texture2D, _islands);
+			// IslandTextureService.DebugIDRT(_idRT, _textureInfo.Texture2D.name);
 		}
 
 		private void DrawAllIsland()
 		{
-			if (_textureInfo == null || _islands == null) return;
+			if (_textureInfo == null || _islands == null) throw new InvalidOperationException("textureInfo or islands is null");
 			if (_islands.Length == 0) { Debug.LogWarning("[ACT][IslandDebug] No islands"); return; }
 			if (_maskRT == null)
 			{
@@ -116,17 +139,17 @@ namespace com.aoyon.AutoConfigureTexture.GUI
 				_maskRT.wrapMode = TextureWrapMode.Clamp;
 				_maskRT.Create();
 			}
-			var svc = new IslandMaskService();
+			var svc = new IslandTextureService();
 			svc.DrawAllIsland(_maskRT, _islands);
 			Repaint();
 		}
 
 		private void RunIslandSSIM()
 		{
-			if (_textureInfo == null || _islands == null || _idRT == null) return;
+			if (_textureInfo == null || _islands == null || _idRT == null) throw new InvalidOperationException("textureInfo or islands or idRT is null");
 			var eval = new IslandSSIMEvaluator();
 			var (means, counts) = eval.Evaluate(_textureInfo.Texture2D, _idRT, 0, 7, 1, _islands.Length);
-			_meanOverlayRT = IslandMeanVisualizer.BuildMeanOverlay(_idRT, means, counts, useHeatColor: false);
+			_meanOverlayRT = new IslandMeanVisualizer().BuildMeanOverlay(_idRT, means, counts, useHeatColor: false);
 			
 			int nonzeroCount = counts.Count(c => c > 0);
 			int totalCount = counts.Sum();
@@ -136,38 +159,60 @@ namespace com.aoyon.AutoConfigureTexture.GUI
 
 		private void DrawPreview()
 		{
-			if (_textureInfo == null && _idRT == null && _maskRT == null && _meanOverlayRT == null) return;
+			if (_textureInfo == null && _idRT == null && _maskRT == null && _meanOverlayRT == null)
+				return;
 
-			string[] labels = { "Original", "ID Map", "Mask", "Mean Overlay" };
 			Texture?[] textures = { _textureInfo?.Texture2D, _idRT, _maskRT, _meanOverlayRT };
 
-			float previewMaxSize = 400f;
 			int cols = 2;
 			int rows = 2;
 
-			EditorGUILayout.BeginHorizontal();
-			for (int row = 0; row < rows; row++)
-			{
-				EditorGUILayout.BeginVertical();
-				for (int col = 0; col < cols; col++)
-				{
-					int idx = row * cols + col;
-					if (idx >= textures.Length) break;
+			var totalRect = GUILayoutUtility.GetRect(1, 1, GUILayout.ExpandWidth(true), GUILayout.ExpandHeight(true));
+			float cellWidth = totalRect.width / cols;
+			float cellHeight = totalRect.height / rows;
 
-					var tex = textures[idx];
-					if (tex != null)
+			for (int i = 0; i < textures.Length; i++)
+			{
+				var tex = textures[i];
+				if (tex != null)
+				{
+					int row = i / cols;
+					int col = i % cols;
+					var x = totalRect.x + col * cellWidth;
+					var y = totalRect.y + row * cellHeight;
+					float areaWidth = cellWidth;
+					float areaHeight = cellHeight;
+
+					float drawWidth = areaWidth;
+					float drawHeight = areaHeight;
+
+					float aspect = tex.width / (float)tex.height;
+					float cellAspect = areaWidth / areaHeight;
+
+					if (aspect > cellAspect)
 					{
-						EditorGUILayout.LabelField(labels[idx], EditorStyles.boldLabel, GUILayout.MaxWidth(previewMaxSize));
-						GUILayout.Box(tex, GUILayout.Width(previewMaxSize), GUILayout.Height(previewMaxSize));
+						drawWidth = areaWidth;
+						drawHeight = areaWidth / aspect;
 					}
 					else
 					{
-						GUILayout.Space(previewMaxSize + 18f);
+						drawHeight = areaHeight;
+						drawWidth = areaHeight * aspect;
 					}
+
+					float offsetX = (areaWidth - drawWidth) * 0.5f;
+					float offsetY = (areaHeight - drawHeight) * 0.5f;
+
+					var cellRect = new Rect(
+						x + offsetX,
+						y + offsetY,
+						drawWidth,
+						drawHeight
+					);
+
+					EditorGUI.DrawPreviewTexture(cellRect, tex);
 				}
-				EditorGUILayout.EndVertical();
 			}
-			EditorGUILayout.EndHorizontal();
 		}
 	}
 }

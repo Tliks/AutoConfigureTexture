@@ -1,19 +1,21 @@
-using UnityEngine;
-
 namespace com.aoyon.AutoConfigureTexture.Processor;
 
-/// <summary>
-/// IslandSSIMEvaluator の結果（mean, count）を1Dテクスチャに詰め、IdMapを使ってヒートマップ可視化するユーティリティ。
-/// </summary>
-internal static class IslandMeanVisualizer
+internal class IslandMeanVisualizer
 {
-    private static Material? s_mat;
+    private readonly Material _mat;
 
-    public static RenderTexture BuildMeanOverlay(RenderTexture idRT, float[] means, int[] counts, bool useHeatColor = true)
+    public IslandMeanVisualizer()
     {
-        if (idRT == null) throw new System.ArgumentNullException(nameof(idRT));
-        if (means == null || means.Length == 0) throw new System.ArgumentException("means");
-        if (counts == null || counts.Length != means.Length) throw new System.ArgumentException("counts");
+        var sh = Shader.Find("Hidden/ACT/IslandMeanVis");
+        if (sh == null) throw new Exception("Shader not found");
+        _mat = new Material(sh);
+    }
+
+    public RenderTexture BuildMeanOverlay(RenderTexture idRT, float[] means, int[] counts, bool useHeatColor = true)
+    {
+        if (idRT == null) throw new ArgumentNullException(nameof(idRT));
+        if (means == null || means.Length == 0) throw new ArgumentException("means");
+        if (counts == null || counts.Length != means.Length) throw new ArgumentException("counts");
 
         var meanTex = new Texture2D(means.Length, 1, TextureFormat.RFloat, false, true)
         {
@@ -39,17 +41,12 @@ internal static class IslandMeanVisualizer
         };
         outRT.Create();
 
-        if (s_mat == null)
-        {
-            var sh = Shader.Find("Hidden/ACT/IslandMeanVis");
-            s_mat = new Material(sh) { hideFlags = HideFlags.HideAndDontSave };
-        }
-        s_mat.SetTexture("_IdTex", idRT);
-        s_mat.SetTexture("_MeanTex", meanTex);
-        s_mat.SetInt("_NumIslands", means.Length);
-        s_mat.SetFloat("_UseColor", useHeatColor ? 1f : 0f);
+        _mat.SetTexture("_IdTex", idRT);
+        _mat.SetTexture("_MeanTex", meanTex);
+        _mat.SetInt("_NumIslands", means.Length);
+        _mat.SetFloat("_UseColor", useHeatColor ? 1f : 0f);
 
-        Graphics.Blit(null as Texture, outRT, s_mat, 0);
+        Graphics.Blit(null, outRT, _mat, 0);
 
         Object.DestroyImmediate(meanTex);
         return outRT;

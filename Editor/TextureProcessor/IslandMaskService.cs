@@ -2,46 +2,45 @@ using UnityEngine.Rendering;
 
 namespace com.aoyon.AutoConfigureTexture.Processor;
 
-internal sealed class IslandMaskService
+internal sealed class IslandTextureService
 {
     private readonly Shader _idShader;
     private const string IdShaderName = "Hidden/ACT/IslandIdRenderer";
 
-	public IslandMaskService()
+	public IslandTextureService()
 	{
         _idShader = Shader.Find(IdShaderName);
-		if (_idShader == null)
-		{
-			throw new Exception($"Shader not found: {IdShaderName}");
-		}
+		if (_idShader == null) throw new Exception($"Shader not found: {IdShaderName}");
 	}
 
-    public RenderTexture BuildIslandIdMapRT(Texture2D src, IReadOnlyList<Island> islands)
+    public RenderTexture BuildIDMap(Texture2D src, IReadOnlyList<Island> islands)
     {
-        // IslandIdRenderer（作成済みシェーダ）を使用。VPはIdentity、シェーダ内で uv*2-1 へ変換。
-        // ID をガンマに依存させないため、RFloat で保持（任意精度・変換なし）
-        var rt = new RenderTexture(src.width, src.height, 0, RenderTextureFormat.RFloat, RenderTextureReadWrite.Linear)
+<<<<<<< HEAD
+        Profiler.BeginSample("IslandTextureService.BuildIDMap.Init");
+
+=======
+>>>>>>> 6930537f8074b10252ca30c3cda09fe43b2c5409
+        var idRT = new RenderTexture(src.width, src.height, 0, RenderTextureFormat.RFloat, RenderTextureReadWrite.Linear)
         {
-            name = "__ACT_IslandIdRT__",
-            useMipMap = false,
-            autoGenerateMips = false,
-            filterMode = FilterMode.Point,
-            wrapMode = TextureWrapMode.Clamp,
             enableRandomWrite = true
         };
-        rt.Create();
+        idRT.Create();
 
-        var mat = new Material(_idShader) { hideFlags = HideFlags.HideAndDontSave };
+        var mat = new Material(_idShader);
         var mpb = new MaterialPropertyBlock();
-        var cmd = new CommandBuffer { name = "ACT/DrawIslandIdMap" };
-        cmd.SetRenderTarget(rt);
-        cmd.SetViewport(new Rect(0, 0, rt.width, rt.height));
+        var cmd = new CommandBuffer();
+        cmd.SetRenderTarget(idRT);
+        cmd.SetViewport(new Rect(0, 0, idRT.width, idRT.height));
         // Editor可視化用：renderIntoTexture=false で左上原点（Editor表示座標系）に合わせる
         var view = Matrix4x4.LookAt(Vector3.back * 10f, Vector3.zero, Vector3.up);
         var proj = Matrix4x4.Ortho(0, 1, 0, 1, 0.01f, 20f);
         var gpuProj = GL.GetGPUProjectionMatrix(proj, /*renderIntoTexture*/ false);
         cmd.SetViewProjectionMatrices(view, gpuProj);
         cmd.ClearRenderTarget(true, true, Color.black);
+
+        Profiler.EndSample();
+
+        Profiler.BeginSample("IslandTextureService.BuildIDMap.DrawIslands");
 
         // Mesh はコマンド実行後に破棄する（実行前に破棄すると描画されない）
         var created = new List<Mesh>(Mathf.Max(1, islands.Count));
@@ -53,13 +52,22 @@ internal sealed class IslandMaskService
             cmd.DrawMesh(mesh, Matrix4x4.identity, mat, 0, 0, mpb);
         }
         Graphics.ExecuteCommandBuffer(cmd);
+
+        Profiler.EndSample();
+
+        Profiler.BeginSample("IslandTextureService.BuildIDMap.Cleanup");
         cmd.Release();
         for (int i = 0; i < created.Count; i++)
         {
             if (created[i] != null) Object.DestroyImmediate(created[i]);
         }
         Object.DestroyImmediate(mat);
-        return rt;
+<<<<<<< HEAD
+        Profiler.EndSample();
+
+=======
+>>>>>>> 6930537f8074b10252ca30c3cda09fe43b2c5409
+        return idRT;
     }
 
 	public void DrawAllIsland(RenderTexture rt, IReadOnlyList<Island> islands)
@@ -90,19 +98,10 @@ internal sealed class IslandMaskService
 		}
 	}
 
-    public static void DebugIDRT(RenderTexture rt, string srcName = "RT", int islandCount = 0, int maxPrintIds = 16)
+    public static void DebugIDRT(RenderTexture rt, string srcName = "RT")
     {
-        if (rt == null)
-        {
-            Debug.LogWarning("[ACT][IslandID Debug] RenderTexture is null");
-            return;
-        }
-
         RenderTexture prev = RenderTexture.active;
-
-
-        // RFloat で書かれた ID をそのまま読み出す
-        Texture2D tex = new Texture2D(rt.width, rt.height, TextureFormat.RFloat, false, /*linear*/ true);
+        Texture2D tex = new Texture2D(rt.width, rt.height, TextureFormat.RFloat, false, true);
         try
         {
             RenderTexture.active = rt;
@@ -110,49 +109,32 @@ internal sealed class IslandMaskService
             tex.Apply();
 
             var raw = tex.GetRawTextureData<float>();
-            int w = rt.width, h = rt.height;
-            int total = raw.Length;
-            int zero = 0, nonzero = 0;
-            var counts = new Dictionary<int, int>();
-            int maxId = 0;
-
-            for (int i = 0; i < total; i++)
+            var countPerId = new Dictionary<int, int>();
+            foreach (var v in raw)
             {
-                int id = Mathf.RoundToInt(raw[i]);
-                if (id <= 0) { zero++; continue; }
-                nonzero++;
-                if (id > maxId) maxId = id;
-                if (id <= maxPrintIds)
-                {
-                    counts.TryGetValue(id, out var c);
-                    counts[id] = c + 1;
-                }
+                int id = Mathf.RoundToInt(v);
+                countPerId[id] = countPerId.GetOrAdd(id, 0) + 1;
             }
 
-            var sb = new System.Text.StringBuilder();
-            sb.Append("[ACT][IslandId Debug] ").Append(srcName)
-              .Append(" size=").Append(w).Append("x").Append(h);
-            if (islandCount > 0) sb.Append(" islands(N)=").Append(islandCount);
-            sb.Append(" nonzero=").Append(nonzero)
-              .Append(" (" ).Append((nonzero * 100f / Mathf.Max(1, total)).ToString("0.00")).Append("%)\n");
-            sb.Append("  maxId=").Append(maxId).Append(" unique(first ").Append(maxPrintIds).Append("):");
-            for (int id = 1; id <= Mathf.Min(maxId, maxPrintIds); id++)
-            {
-                counts.TryGetValue(id, out var c);
-                sb.Append(" ").Append(id).Append(":").Append(c);
-            }
-            Debug.Log(sb.ToString());
+            // カウントの多い順に10個だけデバッグ表示
+            var top10 = countPerId.OrderByDescending(kv => kv.Value)
+                                  .Take(10)
+                                  .Select(kv => $"id={kv.Key},count={kv.Value}");
+            Debug.Log(
+                $"[ACT][IslandId Debug] {srcName} nonzero={countPerId[0]} uniqueIdCount={countPerId.Count} " +
+                $"top10=[{string.Join(", ", top10)}]"
+            );
         }
         finally
         {
             RenderTexture.active = prev;
             Object.DestroyImmediate(tex);
         }
-        
     }
 
 	private static Mesh BuildUvMesh(IReadOnlyList<Island> islands)
 	{
+        using var profiler = new Utils.ProfilerScope("IslandTextureService.BuildUvMesh");
 		var vertices = new List<Vector3>();
 		var indices = new List<int>();
 		int vertexIndex = 0;
@@ -161,7 +143,7 @@ internal sealed class IslandMaskService
 			var tris = island.Triangles;
 			var offs = island.TriangleIndices;
 			var uvs = island.UVs;
-			int triCount = offs.Length;
+			int triCount = offs.Count;
 			for (int t = 0; t < triCount; t++)
 			{
 				int o = offs[t];
@@ -182,10 +164,11 @@ internal sealed class IslandMaskService
 	}
     private static Mesh BuildUvMesh(Island island)
     {
+        using var profiler = new Utils.ProfilerScope("IslandTextureService.BuildUvMesh");
         var tris = island.Triangles;
         var offs = island.TriangleIndices;
         var uvs = island.UVs;
-        int triCount = offs.Length;
+        int triCount = offs.Count;
         var vertices = new List<Vector3>(triCount * 3);
         var indices = new List<int>(triCount * 3);
         int vi = 0;

@@ -8,8 +8,8 @@ internal class TextureInfo
     public readonly Texture2D Texture2D;
     public readonly TextureFormat Format;
 
-    private readonly List<PropertyInfo> _properties = new();
-    public IReadOnlyList<PropertyInfo> Properties => _properties;
+    private readonly List<PropertyInfo> _referencedProperties = new();
+    public IReadOnlyList<PropertyInfo> ReferencedProperties => _referencedProperties;
 
     public readonly TextureImportedInfo? ImportedInfo;
 
@@ -20,7 +20,7 @@ internal class TextureInfo
     {
         Texture2D = texture;
         Format = texture.format;
-        _properties = new List<PropertyInfo>();
+        _referencedProperties = new List<PropertyInfo>();
 
         var importer = AssetImporter.GetAtPath(AssetDatabase.GetAssetPath(texture));
         if (importer is TextureImporter ti)
@@ -31,20 +31,43 @@ internal class TextureInfo
 
     public void AddPropertyInfo(PropertyInfo propertyInfo)
     {
-        _properties.Add(propertyInfo);
+        _referencedProperties.Add(propertyInfo);
     }
 
     private Texture2D EnsureReadableTexture2D()
     {
         if (_readableTexture == null)
         {
-            _readableTexture = Utils.EnsureReadableTexture2D(Texture2D);
+            _readableTexture = TextureUtility.EnsureReadableTexture2D(Texture2D);
         }
         return _readableTexture;
     }
+
+    public override string ToString()
+    {
+        var sb = new System.Text.StringBuilder();
+        sb.AppendLine($"TextureInfo: {Texture2D.name}");
+        sb.Append("  ReferencedProperties: ");
+        foreach (var property in _referencedProperties)
+        {
+            sb.Append($"{property}, ");
+        }
+        return sb.ToString();
+    }
 }
 
-internal record struct PropertyInfo(MaterialInfo MaterialInfo, Shader Shader, string PropertyName, int UVchannel);
+internal record struct PropertyInfo(MaterialInfo MaterialInfo, Shader Shader, string PropertyName, int UVchannel)
+{
+    public override string ToString()
+    {
+        var sb = new System.Text.StringBuilder();
+        sb.AppendLine($"PropertyInfo: {PropertyName}");
+        sb.Append($"  MaterialInfo: {MaterialInfo}");
+        sb.Append($"  Shader: {Shader.name}");
+        sb.Append($"  UVchannel: {UVchannel}");
+        return sb.ToString();
+    }
+}
 
 internal class MaterialInfo
 {
@@ -73,6 +96,23 @@ internal class MaterialInfo
     public void AddTextureInfo(TextureInfo textureInfo)
     {
         _textureInfos.Add(textureInfo);
+    }
+
+    public override string ToString()
+    {
+        var sb = new System.Text.StringBuilder();
+        sb.AppendLine($"MaterialInfo: {Material.name}");
+        sb.Append("  Renderers: ");
+        foreach (var renderer in _renderers)
+        {
+            sb.Append($"{renderer.Key.name}: ");
+            foreach (var index in renderer.Value)
+            {
+                sb.Append($"{index}, ");
+            }
+            sb.AppendLine();
+        }
+        return sb.ToString();
     }
 }
 

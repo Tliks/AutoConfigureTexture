@@ -4,7 +4,7 @@ namespace com.aoyon.AutoConfigureTexture.Processor;
 
 internal class Island
 {
-    public readonly Vector3[] Vertices;
+    public readonly Vector3[] Vertices; // world space
     public readonly Vector2[] UVs;
     public readonly int[] Triangles;
 
@@ -19,9 +19,17 @@ internal class Island
     }
 }
 
-internal class IslandCalculator
+internal class IslandCalculator : IDisposable
 {
-	public static (Island[], IslandArgument[]) CalculateIslandsFor(TextureInfo info)
+    private readonly bool _bakeMesh;
+    private readonly Dictionary<SkinnedMeshRenderer, Mesh> _bakedMeshes;
+    public IslandCalculator(bool bakeMesh = true)
+    {
+        _bakeMesh = bakeMesh;
+        _bakedMeshes = new();
+    }
+
+	public (Island[], IslandArgument[]) CalculateIslandsFor(TextureInfo info)
 	{
 		var uniqueArgs = new HashSet<IslandArgument>();
 		foreach (var property in info.Properties)
@@ -42,29 +50,65 @@ internal class IslandCalculator
 		var allArgs = new List<IslandArgument>();
 		foreach (var arg in uniqueArgs)
 		{
-			var islandsPerArg = IslandCalculator.CalculateIslands(arg.Mesh, arg.SubMeshIndex, arg.UVchannel);
+            Debug.Log($"[ACT] CalculateIslands: {arg.ToString()}");
+			var islandsPerArg = CalculateIslands(arg);
 			allArgs.AddRange(Enumerable.Repeat(arg, islandsPerArg.Length)); // 同じArgにより生成されたIslands
 			allIslands.AddRange(islandsPerArg);
 		}
 		return (allIslands.ToArray(), allArgs.ToArray());
 	}
 
-	public record IslandArgument(PropertyInfo PropertyInfo, int UVchannel, MaterialInfo MaterialInfo, Renderer Renderer, Mesh Mesh, int SubMeshIndex);
-    
-    public static Island[] CalculateIslands(Mesh mesh, int subMeshIndex, int uvChannel)
+	public record IslandArgument(PropertyInfo PropertyInfo, int UVchannel, MaterialInfo MaterialInfo, Renderer Renderer, Mesh Mesh, int SubMeshIndex)
     {
-        Profiler.BeginSample("GetIslands");
+        public override string ToString()
+        {
+            return $"IslandArgument(PropertyInfo={PropertyInfo}, UVchannel={UVchannel}, MaterialInfo={MaterialInfo}, Renderer={Renderer}, Mesh={Mesh}, SubMeshIndex={SubMeshIndex})";
+        }
+    }
+
+    private Dictionary<(Mesh, int, int, Vector3, Quaternion), Island[]> _cachedIslands = new();
+
+    public Island[] CalculateIslands(IslandArgument arg)
+    {
+        var renderer = arg.Renderer;
+
+        var mesh = arg.Mesh;
+        var subMeshIndex = arg.SubMeshIndex;
+        var uvChannel = arg.UVchannel;
+
+        Mesh bakedMesh = mesh;
+        if (_bakeMesh && renderer is SkinnedMeshRenderer smr)
+        {
+            bakedMesh = _bakedMeshes.GetOrAdd(smr, static (r) => {
+                var bakedMesh = new Mesh();
+                r.BakeMesh(bakedMesh, false);
+                return bakedMesh;
+            });
+        }
+
+        return CalculateIslands(bakedMesh, subMeshIndex, uvChannel, renderer.transform.position, renderer.transform.rotation);
+    }
+    
+    public Island[] CalculateIslands(Mesh bakedMesh, int subMeshIndex, int uvChannel, Vector3 basePosition, Quaternion baseRotation)
+    {
+        var key = (bakedMesh, subMeshIndex, uvChannel, basePosition, baseRotation);
+        if (_cachedIslands.TryGetValue(key, out var cachedIslands))
+        {
+            return cachedIslands;
+        }
+
+        using var profiler = new ProfilerScope("CalculateIslands");
 
         Profiler.BeginSample("Init");
-        var indies = mesh.GetIndices(subMeshIndex);
+        var indies = bakedMesh.GetIndices(subMeshIndex);
         var vertCount = indies.Length;
         
         var vertexList = new List<Vector3>();
-        mesh.GetVertices(vertexList);
+        bakedMesh.GetVertices(vertexList);
         var vertices = vertexList.ToArray();
         
         var uvList = new List<Vector2>(vertCount);
-        mesh.GetUVs(uvChannel, uvList);
+        bakedMesh.GetUVs(uvChannel, uvList);
         var uvs = uvList.ToArray();
         Profiler.EndSample();
 
@@ -88,7 +132,7 @@ internal class IslandCalculator
         Profiler.EndSample();
 
         Profiler.BeginSample("Merge");
-        var triangles = mesh.GetTriangles(subMeshIndex);
+        var triangles = bakedMesh.GetTriangles(subMeshIndex);
         for (int i = 0; i < triangles.Length; i += 3)
         {
             unionFind.Unite(triangles[i], triangles[i + 1]);
@@ -96,18 +140,27 @@ internal class IslandCalculator
         }
         Profiler.EndSample();
 
-        Profiler.BeginSample("Result");
+        Profiler.BeginSample("islandIndices");
         var islandIndices = new Dictionary<int, List<int>>(vertCount);
         for (int i = 0; i < triangles.Length; i += 3)
         {
             int root = unionFind.Find(triangles[i]);
             islandIndices.GetOrAdd(root, ListPool<int>.Get()).Add(i);
         }
+        Profiler.EndSample();
+        Profiler.BeginSample("worldVerts");
+        var worldVerts = new Vector3[vertices.Length];
+        for (int i = 0; i < vertices.Length; ++i)
+        {
+            worldVerts[i] = basePosition + baseRotation * vertices[i];
+        }
+        Profiler.EndSample();
+        Profiler.BeginSample("result");
         var result = new Island[islandIndices.Count];
         int j = 0;
         foreach (var (_, indices) in islandIndices)
         {
-            result[j] = new Island(vertices, uvs, triangles, indices.ToArray());
+            result[j] = new Island(worldVerts, uvs, triangles, indices.ToArray());
             ListPool<int>.Release(indices);
             j++;
         }
@@ -116,7 +169,19 @@ internal class IslandCalculator
         Profiler.EndSample();
         return result;
     }
-    
+
+    public void Dispose()
+    {
+        foreach (var mesh in _bakedMeshes.Values)
+        {
+            if (mesh != null)
+            {
+                Object.DestroyImmediate(mesh);
+            }
+        }
+        _bakedMeshes.Clear();
+    }
+
     class UnionFind
     {
         private int[] parent;
