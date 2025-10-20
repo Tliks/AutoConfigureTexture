@@ -60,4 +60,10 @@ internal static class TextureUtility
         }
     }
 
+    public class DisposableRendererTexture : Utils.IDisposableWrapper<RenderTexture>
+    {
+        public DisposableRendererTexture(RenderTexture texture) : base(texture, (t) => t.Release())
+        {
+        }
+    }
 }

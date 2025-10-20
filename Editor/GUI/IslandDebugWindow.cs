@@ -113,7 +113,7 @@ namespace com.aoyon.AutoConfigureTexture.GUI
 			if (_textureInfo == null || _islands == null) throw new InvalidOperationException("textureInfo or islands is null");
 			using var stopwatch = new Utils.StopwatchScope("BuildIDMap");
 			var svc = new IslandTextureService();
-			_idRT = svc.BuildIDMap(_textureInfo.Texture2D, _islands);
+			_idRT = svc.BuildIDMap(_textureInfo.Texture2D, _islands).Value;
 			// IslandTextureService.DebugIDRT(_idRT, _textureInfo.Texture2D.name);
 		}
 

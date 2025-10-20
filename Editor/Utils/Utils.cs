@@ -1,6 +1,5 @@
 namespace com.aoyon.AutoConfigureTexture;
 
-
 internal static class Utils
 {
     public class ProfilerScope : IDisposable
@@ -31,6 +30,23 @@ internal static class Utils
         }
     }
 
+    public class IDisposableWrapper<T> : IDisposable
+    {
+        public T Value { get; }
+        private Action<T> _releaseAction;
+
+        public IDisposableWrapper(T instance, Action<T> releaseAction)
+        {
+            Value = instance;
+            _releaseAction = releaseAction;
+        }
+
+        public void Dispose()
+        {
+            _releaseAction(Value);
+        }
+    }
+
     public static bool IsOpaqueMaterial(Material material)
     {
         string materialTag = "RenderType";
@@ -49,33 +65,5 @@ internal static class Utils
             .Select(i => shader.FindSubshaderTagValue(i, tagid))
             .All(tag => tag.name == "Opaque");
         return isOpaque;
-    }
-}
-
-internal class ProfilerScope : IDisposable
-{
-    public ProfilerScope(string name)
-    {
-        Profiler.BeginSample(name);
-    }
-    public void Dispose()
-    {
-        Profiler.EndSample();
-    }
-}
-
-internal class StopwatchScope : IDisposable
-{
-    private readonly string _name;
-    private readonly System.Diagnostics.Stopwatch _stopwatch;
-    public StopwatchScope(string name)
-    {
-        _name = name;
-        _stopwatch = System.Diagnostics.Stopwatch.StartNew();
-    }
-    public void Dispose()
-    {
-        _stopwatch.Stop();
-        Debug.Log($"[ACT] {_name} {_stopwatch.ElapsedMilliseconds}ms");
     }
 }

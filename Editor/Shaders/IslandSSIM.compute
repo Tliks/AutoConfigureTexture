@@ -1,4 +1,5 @@
 #pragma kernel CSMain
+#pragma target 5.0
 
 // Compute per-island SSIM deltas in a single pass using an IslandId map.
 // For each output window center, we compute SSIM between base level and a downsampled mip level
@@ -8,7 +9,8 @@
 // Flat buffer: [island0_sumFixed, island0_count, island1_sumFixed, island1_count, ...]
 RWStructuredBuffer<uint> _IslandSums;
 // Debug: count how many window centers see id>0
-RWStructuredBuffer<uint> _DebugCounter;
+RWStructuredBuffer<uint> _DebugZeroCounter;
+RWStructuredBuffer<uint> _DebugNonZeroCounter;
 
 Texture2D<float4> _SrcTex;
 SamplerState sampler_linear_clamp;
@@ -41,9 +43,12 @@ uint decodeId(float idVal)
 [numthreads(8, 8, 1)]
 void CSMain(uint3 tid : SV_DispatchThreadID)
 {
+    InterlockedAdd(_DebugZeroCounter[0], 1u);
+
     // Output grid size derived by C#; here we map thread to a window center
     int outX = tid.x;
     int outY = tid.y;
+
 
     int step = max(1, _Stride);
     int win  = max(1, _Window);
@@ -52,11 +57,14 @@ void CSMain(uint3 tid : SV_DispatchThreadID)
     int2 size = _TexSize;
     int gx = outX * step + half;
     int gy = outY * step + half;
+
+    InterlockedAdd(_DebugZeroCounter[0], 1u);
+
     if (gx < half || gy < half || gx >= size.x - half || gy >= size.y - half)
-        return;
+        //return;
 
     // Cull threads outside output grid
-    if (outX >= _OutSize.x || outY >= _OutSize.y) return;
+    if (outX >= _OutSize.x || outY >= _OutSize.y) //return;
 
     // Determine island id at window center (RFloat)
     float idVal = _IdTex.Load(int3(gx, gy, 0));
@@ -64,16 +72,17 @@ void CSMain(uint3 tid : SV_DispatchThreadID)
     if (id == 0u)
     {
         // debug: still track zeros? skip for now
+        InterlockedAdd(_DebugZeroCounter[0], 1u);
         return;
     }
     // debug: count positive-id centers
-    InterlockedAdd(_DebugCounter[0], 1u);
-    if ((int)id < 1 || (int)id > _NumIslands) return;
+    InterlockedAdd(_DebugNonZeroCounter[0], 1u);
+    if ((int)id < 1 || (int)id > _NumIslands) //return;
     int bin = (int)id - 1;
 
     // Compute stats over window for base (L0) and downsampled mip (_MipLevel)
-    double sumX = 0.0, sumY = 0.0;
-    double sumX2 = 0.0, sumY2 = 0.0, sumXY = 0.0;
+    float sumX = 0.0, sumY = 0.0;
+    float sumX2 = 0.0, sumY2 = 0.0, sumXY = 0.0;
     int count = 0;
     int scale = 1 << max(0, _MipLevel);
 
@@ -92,23 +101,23 @@ void CSMain(uint3 tid : SV_DispatchThreadID)
             float ly = luminance(b);
             sumX += lx;
             sumY += ly;
-            sumX2 += (double)lx * (double)lx;
-            sumY2 += (double)ly * (double)ly;
-            sumXY += (double)lx * (double)ly;
+            sumX2 += lx * lx;
+            sumY2 += ly * ly;
+            sumXY += lx * ly;
             count++;
         }
     }
 
     if (count <= 0) return;
-    double invN = 1.0 / (double)count;
-    double muX = sumX * invN;
-    double muY = sumY * invN;
-    double varX = sumX2 * invN - muX * muX;
-    double varY = sumY2 * invN - muY * muY;
-    double covXY = sumXY * invN - muX * muY;
+    float invN = 1.0 / (float)count;
+    float muX = sumX * invN;
+    float muY = sumY * invN;
+    float varX = sumX2 * invN - muX * muX;
+    float varY = sumY2 * invN - muY * muY;
+    float covXY = sumXY * invN - muX * muY;
 
-    double ssim = ((2.0 * muX * muY + C1) * (2.0 * covXY + C2)) / ((muX * muX + muY * muY + C1) * (varX + varY + C2) + 1e-12);
-    float delta = saturate(1.0 - (float)ssim);
+    float ssim = ((2.0 * muX * muY + C1) * (2.0 * covXY + C2)) / ((muX * muX + muY * muY + C1) * (varX + varY + C2) + 1e-12);
+    float delta = saturate(1.0 - ssim);
 
     // Fixed-point scale: 256 (Q8.8) to avoid overflow at large window counts
     const float FP_SCALE = 256.0;

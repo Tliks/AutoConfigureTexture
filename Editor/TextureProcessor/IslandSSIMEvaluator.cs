@@ -11,49 +11,33 @@ internal sealed class IslandSSIMEvaluator
     {
         _cs = AssetDatabase.LoadAssetAtPath<ComputeShader>(AssetDatabase.GUIDToAssetPath(Guid));
         _kernel = _cs.FindKernel("CSMain");
+        Debug.Log(_kernel);
     }
 
     public (float[] means, int[] counts) Evaluate(Texture2D src, RenderTexture idRT, int mipLevel, int window, int stride, int numIslands)
     {
-        // ComputeShader で Mip を読むために、元テクスチャから RenderTexture を作成し Mip を生成
-        RenderTexture? srcRT = null;
-        bool needsCleanup = false;
-        
-        // src が Mip を持つかチェック（mipmapCount > 1）。なければ自前で RT 作成
-        if (src.mipmapCount <= 1 || mipLevel > 0)
-        {
-            srcRT = new RenderTexture(src.width, src.height, 0, RenderTextureFormat.ARGB32, RenderTextureReadWrite.Linear)
-            {
-                useMipMap = true,
-                autoGenerateMips = false,  // 手動で GenerateMips を呼ぶため false
-                filterMode = FilterMode.Bilinear,
-                wrapMode = TextureWrapMode.Clamp
-            };
-            srcRT.Create();
-            
-            // RenderTexture.active を一時的に保存
-            var prevActive = RenderTexture.active;
-            try
-            {
-                Graphics.Blit(src, srcRT);
-                srcRT.GenerateMips();
-            }
-            finally
-            {
-                RenderTexture.active = prevActive;
-            }
-            needsCleanup = true;
-        }
+        Debug.Log($"[ACT][IslandSSIM] supportsCS={SystemInfo.supportsComputeShaders} _cs={(object)_cs != null} kernel={_kernel}");
+
+        if (_cs == null)
+            throw new InvalidOperationException("ComputeShader is null (failed to load by GUID)");
+        if (_kernel < 0)
+            throw new InvalidOperationException("Kernel not found (CSMain)");
+        if (numIslands <= 0)
+            throw new ArgumentOutOfRangeException(nameof(numIslands));
+        if (src == null || idRT == null)
+            throw new ArgumentNullException("src or idRT is null");
 
         var sums = new ComputeBuffer(numIslands * 2, sizeof(uint));
-        var debugCounter = new ComputeBuffer(1, sizeof(uint));
+        var debugZeroCounter = new ComputeBuffer(1, sizeof(uint));
+        var debugNonZeroCounter = new ComputeBuffer(1, sizeof(uint));
         var zer = new uint[numIslands * 2];
         sums.SetData(zer);
-        debugCounter.SetData(new uint[] { 0u });
+        debugZeroCounter.SetData(new uint[] { 0u });
+        debugNonZeroCounter.SetData(new uint[] { 0u });
 
         try
         {
-            _cs.SetTexture(_kernel, "_SrcTex", needsCleanup ? srcRT : (Texture)src);
+            _cs.SetTexture(_kernel, "_SrcTex", src);
             _cs.SetTexture(_kernel, "_IdTex", idRT);
             _cs.SetInts("_TexSize", new int[] { src.width, src.height });
             _cs.SetInt("_Window", window);
@@ -66,19 +50,26 @@ internal sealed class IslandSSIMEvaluator
             int outH = Mathf.Max(1, (src.height - window + 1 + (step - 1)) / step);
             _cs.SetInts("_OutSize", new int[] { outW, outH });
             _cs.SetBuffer(_kernel, "_IslandSums", sums);
-            _cs.SetBuffer(_kernel, "_DebugCounter", debugCounter);
+            _cs.SetBuffer(_kernel, "_DebugZeroCounter", debugZeroCounter);
+            _cs.SetBuffer(_kernel, "_DebugNonZeroCounter", debugNonZeroCounter);
 
             uint tgx, tgy, tgz;
             _cs.GetKernelThreadGroupSizes(_kernel, out tgx, out tgy, out tgz);
             int gx = Mathf.CeilToInt(outW / (float)tgx);
             int gy = Mathf.CeilToInt(outH / (float)tgy);
+            Debug.Log($"[ACT][IslandSSIM] out=({outW},{outH}) tgs=({tgx},{tgy},{tgz}) groups=({gx},{gy},1)");
+            if (gx <= 0 || gy <= 0)
+                throw new InvalidOperationException($"Invalid dispatch groups gx={gx} gy={gy}");
             _cs.Dispatch(_kernel, gx, gy, 1);
 
             var raw = new uint[numIslands * 2];
             sums.GetData(raw);
-            var dbg = new uint[1];
-            debugCounter.GetData(dbg);
-            Debug.Log($"[ACT][IslandSSIM][dbg] positiveIdCenters={dbg[0]}");
+            var dbgz = new uint[1];
+            var dbgnz = new uint[1];
+            debugZeroCounter.GetData(dbgz);
+            debugNonZeroCounter.GetData(dbgnz);
+            Debug.Log($"[ACT][IslandSSIM][dbg] ZeroIdCenters={dbgz[0]}");
+            Debug.Log($"[ACT][IslandSSIM][dbg] positiveIdCenters={dbgnz[0]}");
             var means = new float[numIslands];
             var counts = new int[numIslands];
             const float FP_SCALE = 256.0f;
@@ -95,17 +86,8 @@ internal sealed class IslandSSIMEvaluator
         finally
         {
             sums.Dispose();
-            debugCounter.Dispose();
-            if (needsCleanup && srcRT != null)
-            {
-                // RT が active の場合は解除してから Release
-                if (RenderTexture.active == srcRT)
-                {
-                    RenderTexture.active = null;
-                }
-                srcRT.Release();
-                Object.DestroyImmediate(srcRT);
-            }
+            debugZeroCounter.Dispose();
+            debugNonZeroCounter.Dispose();
         }
     }
 }

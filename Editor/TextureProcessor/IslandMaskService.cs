@@ -13,9 +13,11 @@ internal sealed class IslandTextureService
 		if (_idShader == null) throw new Exception($"Shader not found: {IdShaderName}");
 	}
 
-    public RenderTexture BuildIDMap(Texture2D src, IReadOnlyList<Island> islands)
+    public TextureUtility.DisposableRendererTexture BuildIDMap(Texture2D src, IReadOnlyList<Island> islands)
     {
         Profiler.BeginSample("IslandTextureService.BuildIDMap.Init");
+
+        Debug.Log(SystemInfo.SupportsRenderTextureFormat(RenderTextureFormat.RFloat));
 
         var idRT = new RenderTexture(src.width, src.height, 0, RenderTextureFormat.RFloat, RenderTextureReadWrite.Linear)
         {
@@ -61,7 +63,7 @@ internal sealed class IslandTextureService
         Object.DestroyImmediate(mat);
         Profiler.EndSample();
 
-        return idRT;
+        return new(idRT);
     }
 
 	public void DrawAllIsland(RenderTexture rt, IReadOnlyList<Island> islands)

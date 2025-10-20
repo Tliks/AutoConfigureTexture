@@ -38,18 +38,13 @@ internal sealed class TextureScaleDecider
                 continue;
             }
 
-            var idRT = _maskService.BuildIDMap(tex, islands);
+            using var idRT = _maskService.BuildIDMap(tex, islands);
 			var ssimEval = new IslandSSIMEvaluator();
-            try
+            var ssimMeans = new List<float[]>(maxDownScaleLevel);
+            for (int si = 0; si < maxDownScaleLevel; si++)
             {
-				for (int si = 0; si < maxDownScaleLevel; si++)
-				{
-					var (means, counts) = ssimEval.Evaluate(tex, idRT, si, window: 11, stride: 2, numIslands: islands.Length);
-				}
-            }
-            finally
-            {
-				if (idRT != null) idRT.Release();
+                var (means, counts) = ssimEval.Evaluate(tex, idRT.Value, si, window: 11, stride: 2, numIslands: islands.Length);
+                ssimMeans[si] = means;
             }
         }
 
