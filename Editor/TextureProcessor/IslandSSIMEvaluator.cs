@@ -14,7 +14,7 @@ internal sealed class IslandSSIMEvaluator
         _kernel = _cs.FindKernel("CSMain");
     }
 
-    public (float[] means, int[] counts) Evaluate(Texture2D src, RenderTexture idRT, int mipLevel, int numIslands, int window = 11)
+    public (float[] means, int[] counts) Evaluate(Texture2D src, RenderTexture idRT, int mipLevel, int numIslands, float alpha = 1.0f, float beta = 1.0f, float gamma = 1.0f, int window = 11)
     {
         var sums = new ComputeBuffer(numIslands * 2, sizeof(uint));
         var debugZeroCounter = new ComputeBuffer(1, sizeof(uint));
@@ -29,6 +29,9 @@ internal sealed class IslandSSIMEvaluator
             _cs.SetTexture(_kernel, "_SrcTex", src);
             _cs.SetInts("_TexSize", new int[] { src.width, src.height });
             _cs.SetInt("_MipLevel", mipLevel);
+            _cs.SetFloat("_alpha", alpha);
+            _cs.SetFloat("_beta", beta);
+            _cs.SetFloat("_gamma", gamma);
             _cs.SetInt("_Window", window);
             _cs.SetTexture(_kernel, "_IdTex", idRT);
             _cs.SetBuffer(_kernel, "_IslandSums", sums);

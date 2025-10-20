@@ -7,7 +7,11 @@ namespace com.aoyon.AutoConfigureTexture.GUI
 		private GameObject? _root;
 		private TextureInfo[]? _textureInfos;
 		private int _selectedTextureIndex;
+
 		private int _selectedMipLevel;
+		private float _alpha = 1.0f;
+		private float _beta = 1.0f;
+		private float _gamma = 1.0f;
 
 		private TextureInfo? _textureInfo;
 		private Island[]? _islands;
@@ -115,6 +119,15 @@ namespace com.aoyon.AutoConfigureTexture.GUI
 					OnMipLevelChanged(newMipLevel);
 				}
 			}
+
+			EditorGUILayout.LabelField("SSIM Parameters");
+			using (new EditorGUILayout.HorizontalScope())
+			{
+				EditorGUILayout.LabelField("Alpha, Beta, Gamma");
+				_alpha = EditorGUILayout.Slider(_alpha, 1.0f, 10.0f);
+				_beta = EditorGUILayout.Slider(_beta, 1.0f, 10.0f);
+				_gamma = EditorGUILayout.Slider(_gamma, 1.0f, 10.0f);
+			}
 		}
 
 		private void OnMipLevelChanged(int newMipLevel)
@@ -140,7 +153,7 @@ namespace com.aoyon.AutoConfigureTexture.GUI
 		{
 			if (_textureInfo == null || _islands == null || _idRT == null) throw new InvalidOperationException("textureInfo or islands or idRT is null");
 			var eval = new IslandSSIMEvaluator();
-			var (means, counts) = eval.Evaluate(_textureInfo.Texture2D, _idRT, _selectedMipLevel, _islands.Length);
+			var (means, counts) = eval.Evaluate(_textureInfo.Texture2D, _idRT, _selectedMipLevel, _islands.Length, _alpha, _beta, _gamma);
 			_meanOverlayRT = new IslandMeanVisualizer().BuildMeanOverlay(_idRT, means, counts, useHeatColor: true);
 			
 			int nonzeroCount = counts.Count(c => c > 0);

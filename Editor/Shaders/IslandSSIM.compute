@@ -1,32 +1,33 @@
 #pragma kernel CSMain
 
+// https://en.wikipedia.org/wiki/Structural_similarity_index_measure
+
 Texture2D<float4> _SrcTex;
 int2 _TexSize;
 
 uint _MipLevel;
 
 uint _Window;
+float _alpha; // luminance 
+float _beta; // contrast 
+float _gamma; // structure 
 
 Texture2D<float> _IdTex;
-
 RWStructuredBuffer<uint> _IslandSums;
 
 RWStructuredBuffer<uint> _DebugZeroCounter;
 RWStructuredBuffer<uint> _DebugNonZeroCounter;
 
-static const float C1 = 0.01 * 0.01;
-static const float C2 = 0.03 * 0.03;
-
+static const float L = 1.0;
+static const float k_1 = 0.01;
+static const float k_2 = 0.03;
+static const float C1 = (k_1 * L) * (k_1 * L);
+static const float C2 = (k_2 * L) * (k_2 * L);
+static const float C3 = C2 * 0.5;
 
 float luminance(float3 c)
 {
     return dot(c, float3(0.299, 0.587, 0.114));
-}
-
-uint SSIMToFixed(float ssim)
-{
-    ssim = clamp(ssim, 0.0, 1.0);
-    return (uint)(ssim * 100.0);
 }
 
 float ComputeSSIM(int2 center)
@@ -63,17 +64,35 @@ float ComputeSSIM(int2 center)
         }
     }
 
-    if (count == 0u) return 0.0; // Todo pixelが0のアイランドを適切に除外する？
+    if (count == 0u) return 0.0; // 最低でも中心のピクセルが条件を満たすはず
     
     float invN = 1.0 / (float)count;
+
     float muX = sumX * invN;
     float muY = sumY * invN;
     float varX = sumX2 * invN - muX * muX;
     float varY = sumY2 * invN - muY * muY;
     float covXY = sumXY * invN - muX * muY;
 
-    float ssim = ((2.0 * muX * muY + C1) * (2.0 * covXY + C2)) / ((muX * muX + muY * muY + C1) * (varX + varY + C2) + 1e-12);    
+    varX = max(varX, 0.0);
+    varY = max(varY, 0.0);
+
+    float sigmaX = sqrt(varX);
+    float sigmaY = sqrt(varY);
+    
+    float luminanceComponent = (2.0 * muX * muY + C1) / (muX * muX + muY * muY + C1);
+    float contrastComponent = (2.0 * sigmaX * sigmaY + C2) / (varX + varY + C2);
+    float structureComponent = (covXY + C3) / (sigmaX * sigmaY + C3);
+    
+    float ssim = pow(luminanceComponent, _alpha) * pow(contrastComponent, _beta) * pow(structureComponent, _gamma);
+    
     return ssim;
+}
+
+uint SSIMToFixed(float ssim)
+{
+    ssim = clamp(ssim, 0.0, 1.0);
+    return (uint)(ssim * 100.0);
 }
 
 void AccumulateResult(float ssim, int2 center)
