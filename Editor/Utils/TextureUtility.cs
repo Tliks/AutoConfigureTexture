@@ -1,6 +1,6 @@
 namespace com.aoyon.AutoConfigureTexture;
 
-internal static class TextureUtility
+internal static partial class TextureUtility
 {
     public static Texture2D EnsureReadableTexture2D(Texture2D texture2d, bool isSRGB)
     {
@@ -15,7 +15,7 @@ internal static class TextureUtility
     public static Texture2D GetReadableTexture2D(Texture2D texture2d, bool isSRGB)
     {
         using var scope = new Utils.ProfilerScope("GetReadableTexture2D");
-        
+
         var colorSpace = isSRGB ? RenderTextureReadWrite.sRGB : RenderTextureReadWrite.Linear;
         var hasMipMaps = texture2d.mipmapCount > 1;
         

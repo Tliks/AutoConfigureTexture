@@ -2,29 +2,23 @@ using System.Runtime.InteropServices;
 using UnityEngine.Experimental.Rendering;
 using UnityEngine.Rendering;
 
-namespace com.aoyon.AutoConfigureTexture.Processor;
+namespace com.aoyon.AutoConfigureTexture;
 
-internal class AlphaAnalyzer
+internal static partial class TextureUtility
 {
-    private static Material? s_alphaBinarizationMaterial = null;
-    private static Material AlphaBinarizationMaterial
+    private static Material _alphaBinarizationMaterial = null!;
+    [InitializeOnLoadMethod]
+    static void Initialize()
     {
-        get
+        var alphaBinarization = Shader.Find("Hidden/AutoConfigureTexture/AlphaBinarization");
+        if (alphaBinarization == null)
         {
-            if (s_alphaBinarizationMaterial == null)
-            {
-                var alphaBinarization = Shader.Find("Hidden/AutoConfigureTexture/AlphaBinarization");
-                if (alphaBinarization == null)
-                {
-                    throw new Exception("Shader not found: Hidden/AutoConfigureTexture/AlphaBinarization");
-                }
-                s_alphaBinarizationMaterial = new Material(alphaBinarization);
-            }
-            return s_alphaBinarizationMaterial;
+            throw new Exception("Shader not found: Hidden/AutoConfigureTexture/AlphaBinarization");
         }
+        _alphaBinarizationMaterial = new Material(alphaBinarization);
     }
 
-    public bool HasAlpha(TextureInfo textureInfo)
+    public static bool HasAlpha(TextureInfo textureInfo)
     {
         if (GraphicsFormatUtility.HasAlphaChannel(textureInfo.Format))
         {
@@ -50,7 +44,7 @@ internal class AlphaAnalyzer
         var active = RenderTexture.active;
         try
         {
-            Graphics.Blit(texture, temp, AlphaBinarizationMaterial);
+            Graphics.Blit(texture, temp, _alphaBinarizationMaterial);
             var request = AsyncGPUReadback.Request(temp, 0, TextureFormat.R8);
             request.WaitForCompletion();
 

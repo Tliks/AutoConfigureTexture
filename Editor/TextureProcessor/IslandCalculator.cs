@@ -1,7 +1,7 @@
 namespace com.aoyon.AutoConfigureTexture.Processor;
 
 internal record Island(IReadOnlyList<Vector3> Vertices, IReadOnlyList<Vector2> UVs, IReadOnlyList<int> Triangles, IReadOnlyList<int> TriangleIndices);
-internal record IslandDesciption(PropertyInfo PropertyInfo, int UVchannel, MaterialInfo MaterialInfo, Renderer Renderer, Mesh Mesh, int SubMeshIndex)
+internal record IslandDescription(PropertyInfo PropertyInfo, int UVchannel, MaterialInfo MaterialInfo, Renderer Renderer, Mesh Mesh, int SubMeshIndex)
 {
     public override string ToString()
     {
@@ -24,11 +24,11 @@ internal class IslandCalculator : IDisposable
         _bakeMesh = bakeMesh;
     }
 
-	public (Island[] Islands, IslandDesciption[] Descriptions) CalculateIslandsFor(TextureInfo info)
+	public (Island[] Islands, IslandDescription[] Descriptions) CalculateIslandsFor(TextureInfo info)
 	{
         using var profiler = new Utils.ProfilerScope("CalculateIslandsFor");
 
-        var IslandswithDescription = new List<(Island[] islands, IslandDesciption description)>();
+        var IslandswithDescription = new List<(Island[] islands, IslandDescription description)>();
         int totalIslandCount = 0;
         var uniqueKeys = new HashSet<IslandCalculationKey>();
 		foreach (var property in info.ReferencedProperties)
@@ -46,14 +46,14 @@ internal class IslandCalculator : IDisposable
                     uniqueKeys.Add(key);
                     MayCalculateIslands(key, out var islands);
                     Debug.Log($"[ACT][IslandCalculator] islands={islands.Length} args={renderer.name}, {index}, {uv}");
-					IslandswithDescription.Add((islands, new IslandDesciption(property, uv, materialInfo, renderer, mesh, index)));
+					IslandswithDescription.Add((islands, new IslandDescription(property, uv, materialInfo, renderer, mesh, index)));
                     totalIslandCount += islands.Length;
 				}
 			}
 		}
 
         var allIslands = new Island[totalIslandCount];
-        var allDescriptions = new IslandDesciption[totalIslandCount];
+        var allDescriptions = new IslandDescription[totalIslandCount];
         int currentIndex = 0;
         foreach (var (islands, description) in IslandswithDescription)
         {

@@ -1,6 +1,6 @@
-#pragma kernel CSMain
-
 // https://en.wikipedia.org/wiki/Structural_similarity_index_measure
+
+#pragma kernel CSMain
 
 Texture2D<float4> _SrcTex;
 int2 _TexSize;
@@ -8,9 +8,9 @@ int2 _TexSize;
 uint _MipLevel;
 
 uint _Window;
-float _alpha; // luminance 
-float _beta; // contrast 
-float _gamma; // structure 
+float _Alpha; // luminance 
+float _Beta; // contrast 
+float _Gamma; // structure 
 
 Texture2D<float> _IdTex;
 RWStructuredBuffer<uint> _IslandSums;
@@ -83,16 +83,21 @@ float ComputeSSIM(int2 center)
     float luminanceComponent = (2.0 * muX * muY + C1) / (muX * muX + muY * muY + C1);
     float contrastComponent = (2.0 * sigmaX * sigmaY + C2) / (varX + varY + C2);
     float structureComponent = (covXY + C3) / (sigmaX * sigmaY + C3);
-    
-    float ssim = pow(luminanceComponent, _alpha) * pow(contrastComponent, _beta) * pow(structureComponent, _gamma);
-    
+
+    float luminancePow  = pow(abs(luminanceComponent), _Alpha);
+    float contrastPow   = pow(abs(contrastComponent),  _Beta);
+    float structurePow  = pow(abs(structureComponent), _Gamma);
+
+    float ssim = luminancePow * contrastPow * structurePow;
+
     return ssim;
 }
 
+static const float FP_SCALE = 50.0f; // [0.00, 1.00]で0.02区切り このままこれ以上細かくするとuintの限界が。。
 uint SSIMToFixed(float ssim)
 {
     ssim = clamp(ssim, 0.0, 1.0);
-    return (uint)(ssim * 100.0);
+    return (uint)(ssim * FP_SCALE);
 }
 
 void AccumulateResult(float ssim, int2 center)

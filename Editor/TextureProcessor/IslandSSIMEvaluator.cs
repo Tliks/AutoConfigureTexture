@@ -16,6 +16,8 @@ internal sealed class IslandSSIMEvaluator
 
     public (float[] means, int[] counts) Evaluate(Texture2D src, RenderTexture idRT, int mipLevel, int numIslands, float alpha = 1.0f, float beta = 1.0f, float gamma = 1.0f, int window = 11)
     {
+        using var profiler = new Utils.StopwatchScope("IslandSSIMEvaluator.Evaluate");
+        
         var sums = new ComputeBuffer(numIslands * 2, sizeof(uint));
         var debugZeroCounter = new ComputeBuffer(1, sizeof(uint));
         var debugNonZeroCounter = new ComputeBuffer(1, sizeof(uint));
@@ -29,9 +31,9 @@ internal sealed class IslandSSIMEvaluator
             _cs.SetTexture(_kernel, "_SrcTex", src);
             _cs.SetInts("_TexSize", new int[] { src.width, src.height });
             _cs.SetInt("_MipLevel", mipLevel);
-            _cs.SetFloat("_alpha", alpha);
-            _cs.SetFloat("_beta", beta);
-            _cs.SetFloat("_gamma", gamma);
+            _cs.SetFloat("_Alpha", alpha);
+            _cs.SetFloat("_Beta", beta);
+            _cs.SetFloat("_Gamma", gamma);
             _cs.SetInt("_Window", window);
             _cs.SetTexture(_kernel, "_IdTex", idRT);
             _cs.SetBuffer(_kernel, "_IslandSums", sums);
@@ -54,7 +56,7 @@ internal sealed class IslandSSIMEvaluator
             Debug.Log($"[ACT][IslandSSIM][dbg] positiveIdCenters={dbgnz[0]}");
             var means = new float[numIslands];
             var counts = new int[numIslands];
-            const float FP_SCALE = 100.0f;
+            const float FP_SCALE = 50.0f;  // 理論上8K(64MP * 50)で全ピクセルが単一アイランドに集中すると3.2E9でuintの限界(4.3E9)ギリギリ
             for (int i = 0; i < numIslands; i++)
             {
                 uint sumFixed = raw[i * 2 + 0];

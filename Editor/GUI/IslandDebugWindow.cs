@@ -123,7 +123,7 @@ namespace com.aoyon.AutoConfigureTexture.GUI
 			EditorGUILayout.LabelField("SSIM Parameters");
 			using (new EditorGUILayout.HorizontalScope())
 			{
-				EditorGUILayout.LabelField("Alpha, Beta, Gamma");
+				EditorGUILayout.LabelField("luminance, contrast, structure");
 				_alpha = EditorGUILayout.Slider(_alpha, 1.0f, 10.0f);
 				_beta = EditorGUILayout.Slider(_beta, 1.0f, 10.0f);
 				_gamma = EditorGUILayout.Slider(_gamma, 1.0f, 10.0f);
