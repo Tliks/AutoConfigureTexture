@@ -41,7 +41,7 @@ public class AutoConfigureTextureEditor : Editor
         var root = RuntimeUtil.FindAvatarInParents(component.transform);
         if (root == null) return;
         var textureInfos = collector.Execute(root.gameObject);
-        var decider = new TextureScaleDecider();
+        var decider = new TextureScaleDecider(root.gameObject);
         var results = decider.Decide(textureInfos.ToList(), Mathf.Clamp01(component.Quality));
         foreach (var result in results)
         {

@@ -1,6 +1,6 @@
 namespace com.aoyon.AutoConfigureTexture.Processor;
 
-internal record Island(IReadOnlyList<Vector3> Vertices, IReadOnlyList<Vector2> UVs, IReadOnlyList<int> Triangles, IReadOnlyList<int> TriangleIndices);
+internal record Island(IReadOnlyList<Vector3> Vertices, IReadOnlyList<Vector2> UVs, IReadOnlyList<int> Triangles, IReadOnlyList<int> TriangleIndices, float TriangleArea, float UVArea);
 internal record IslandDescription(PropertyInfo PropertyInfo, int UVchannel, MaterialInfo MaterialInfo, Renderer Renderer, Mesh Mesh, int SubMeshIndex)
 {
     public override string ToString()
@@ -28,6 +28,10 @@ internal class IslandCalculator : IDisposable
 	{
         using var profiler = new Utils.ProfilerScope("CalculateIslandsFor");
 
+        var texture = info.Texture2D;
+        float texWidth = texture != null ? texture.width : 1f;
+        float texHeight = texture != null ? texture.height : 1f;
+
         var IslandswithDescription = new List<(Island[] islands, IslandDescription description)>();
         int totalIslandCount = 0;
         var uniqueKeys = new HashSet<IslandCalculationKey>();
@@ -44,7 +48,7 @@ internal class IslandCalculator : IDisposable
                     var key = new IslandCalculationKey(renderer, mesh, index, uv);
                     if (uniqueKeys.Contains(key)) continue;
                     uniqueKeys.Add(key);
-                    MayCalculateIslands(key, out var islands);
+                    MayCalculateIslands(key, texWidth, texHeight, out var islands);
                     Debug.Log($"[ACT][IslandCalculator] islands={islands.Length} args={renderer.name}, {index}, {uv}");
 					IslandswithDescription.Add((islands, new IslandDescription(property, uv, materialInfo, renderer, mesh, index)));
                     totalIslandCount += islands.Length;
@@ -75,7 +79,7 @@ internal class IslandCalculator : IDisposable
     private Dictionary<IslandCalculationKey, Island[]> _cachedIslands = new();
     private Dictionary<SkinnedMeshRenderer, Mesh> _cachedBakedMeshes = new();
 
-    public bool MayCalculateIslands(IslandCalculationKey key, out Island[] islands)
+    public bool MayCalculateIslands(IslandCalculationKey key, float texWidth, float texHeight, out Island[] islands)
     {
         using var profiler = new Utils.ProfilerScope("MayCalculateIslands");
         if (_cachedIslands.TryGetValue(key, out var cachedIslands))
@@ -90,12 +94,12 @@ internal class IslandCalculator : IDisposable
             smr.BakeMesh(bakedMesh, false);
             _cachedBakedMeshes[smr] = bakedMesh;
         }
-        islands = CalculateIslandsImpl(bakedMesh, key.SubMeshIndex, key.UVchannel, key.Renderer.transform.position, key.Renderer.transform.rotation);
+        islands = CalculateIslandsImpl(bakedMesh, key.SubMeshIndex, key.UVchannel, key.Renderer.transform.position, key.Renderer.transform.rotation, texWidth, texHeight);
         _cachedIslands[key] = islands;
         return true;
     }
 
-    private Island[] CalculateIslandsImpl(Mesh bakedMesh, int subMeshIndex, int uvChannel, Vector3 basePosition, Quaternion baseRotation)
+    private Island[] CalculateIslandsImpl(Mesh bakedMesh, int subMeshIndex, int uvChannel, Vector3 basePosition, Quaternion baseRotation, float texWidth, float texHeight)
     {
         using var profiler = new Utils.ProfilerScope("CalculateIslandsImpl");
 
@@ -165,11 +169,52 @@ internal class IslandCalculator : IDisposable
         foreach (var indices in islandIndices)
         {
             if (indices is null) continue;
-            islands.Add(new Island(worldVerts, uvs, triangles, indices));
+            var (triangleArea, uvArea) = CalculateArea(worldVerts, uvs, triangles, indices);
+            islands.Add(new Island(worldVerts, uvs, triangles, indices, triangleArea, uvArea));
         }
         var result = islands.ToArray();
         Profiler.EndSample();
         return result;
+    }
+
+    private static (float triangleArea, float uvArea) CalculateArea(IReadOnlyList<Vector3> vertices, IReadOnlyList<Vector2> uvs, IReadOnlyList<int> triangles, IReadOnlyList<int> triangleIndices)
+    {
+        float sumTotalTriangleArea = 0.0f;
+        float sumTotalUvArea = 0.0f;
+
+        int triangleCount = triangleIndices.Count;
+        for (int t = 0; t < triangleCount; t++)
+        {
+            int offset = triangleIndices[t];
+            int i0 = triangles[offset];
+            int i1 = triangles[offset + 1];
+            int i2 = triangles[offset + 2];
+
+            var v0 = vertices[i0];
+            var v1 = vertices[i1];
+            var v2 = vertices[i2];
+
+            var uv0 = uvs[i0];
+            var uv1 = uvs[i1];
+            var uv2 = uvs[i2];
+
+            var edge1 = v1 - v0;
+            var edge2 = v2 - v0;
+            float triArea3D = 0.5f * Vector3.Cross(edge1, edge2).magnitude;
+
+            float uvDx1 = uv1.x - uv0.x;
+            float uvDy1 = uv1.y - uv0.y;
+            float uvDx2 = uv2.x - uv0.x;
+            float uvDy2 = uv2.y - uv0.y;
+            float triAreaUV = 0.5f * Mathf.Abs(uvDx1 * uvDy2 - uvDx2 * uvDy1);
+
+            if (triArea3D > 0.0f && triAreaUV > 0.0f)
+            {
+                sumTotalTriangleArea += triArea3D;
+                sumTotalUvArea += triAreaUV;
+            }
+        }
+        return (sumTotalTriangleArea, sumTotalUvArea);
     }
 
     public void Dispose()
