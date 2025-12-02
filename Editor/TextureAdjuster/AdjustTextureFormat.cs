@@ -29,6 +29,11 @@ namespace com.aoyon.AutoConfigureTexture.Adjuster
         {
             data = null;
             
+            if (info.ImportedInfo?.TextureImporterType != TextureImporterType.Default)
+            {
+                return false;
+            }
+
             var current = info.Format;
             var format = current;
 

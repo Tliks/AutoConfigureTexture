@@ -17,19 +17,16 @@ internal class PrimaryUsageAnalyzer
     public TextureUsage Analyze(TextureInfo textureInfo)
     {
         var usages = textureInfo.Properties
-            .Select(info => ShaderInformation.GetTextureUsage(info.Shader, info.PropertyName));
-            
-        // 不明プロパティが1つでも含まれる場合
-        if (usages.Any(u => u == TextureUsage.Unknown))
-        {
-            return TextureUsage.Unknown;
-        }
+            .Select(info => ShaderInformation.GetTextureUsage(info.Shader, info.PropertyName))
+            .Where(u => u != TextureUsage.Unknown) // 一旦除外する
+            .ToList();
         return GetPrimaryUsage(usages);
 
         // primaryでない使用用途を全て無視しているのでもう少し良い取り扱い方はしたい
         // MainTex > NormalMap > Emission > AOMap > NormalMapSub > Others > MatCap
-        static TextureUsage GetPrimaryUsage(IEnumerable<TextureUsage> usages)
+        static TextureUsage GetPrimaryUsage(List<TextureUsage> usages)
         {
+            if (usages.Count == 0) return TextureUsage.Unknown;
             foreach (var usage in s_usages)
             {
                 if (usages.Contains(usage))
