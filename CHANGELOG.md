@@ -13,6 +13,15 @@
 
 ### Security
 
+## [0.5.1] - 2025-12-02
+### Changed
+- Changed the TexTransTool dependency declaration to >=1.0.0.
+
+### Fixed
+- Fixed an issue where the alpha channel was not considered when changing the compression format of textures with TextureImporterType set to NormalMap.
+- Fixed an issue where ParticleRenderer was mistakenly included as a processing target.
+- Fixed an error that occurred when there were textures with unknown usage.
+
 ## [0.5.0] - 2025-04-23
 ### Added
 - Added Japanese changelog.

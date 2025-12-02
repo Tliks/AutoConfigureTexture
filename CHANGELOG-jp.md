@@ -4,18 +4,23 @@
 ### Added
 
 ### Changed
-- TexTransToolの依存関係の宣言を>=1.0.0に変更。
-- TextureImporterTypeがDefaultなテクスチャのみを処理の対象とするように変更
 
 ### Deprecated
 
 ### Removed
 
 ### Fixed
-- TextureImporterTypeがNormalMapのテクスチャの圧縮形式を変更する際に、アルファが考慮されていない問題を修正。
-- ParticleRendererが誤って処理の対象となっていた問題を修正。
 
 ### Security
+
+## [0.5.1] - 2025-12-02
+### Changed
+- TexTransToolの依存関係の宣言を>=1.0.0に変更。
+
+### Fixed
+- TextureImporterTypeがNormalMapのテクスチャの圧縮形式を変更する際に、アルファが考慮されていない問題を修正。
+- ParticleRendererが誤って処理の対象となっていた問題を修正。
+- 不明な使用用途を持つテクスチャが存在する際のエラーを修正
 
 ## [0.5.0] - 2025-04-23
 ### Added
