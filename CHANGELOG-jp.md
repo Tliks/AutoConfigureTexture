@@ -4,7 +4,6 @@
 ### Added
 
 ### Changed
-- MipMapの削除機能を削除
 
 ### Deprecated
 
@@ -13,6 +12,9 @@
 ### Fixed
 
 ### Security
+
+## [0.6.0] - 2026-01-06
+- MipMapの削除機能を削除
 
 ## [0.5.1] - 2025-12-02
 ### Changed

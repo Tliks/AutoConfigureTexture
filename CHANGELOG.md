@@ -4,7 +4,6 @@
 ### Added
 
 ### Changed
-- Removed the MipMap deletion feature
 
 ### Deprecated
 
@@ -13,6 +12,9 @@
 ### Fixed
 
 ### Security
+
+## [0.6.0] - 2026-01-06
+- Removed the MipMap deletion feature
 
 ## [0.5.1] - 2025-12-02
 ### Changed
