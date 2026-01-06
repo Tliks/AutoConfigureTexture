@@ -60,7 +60,6 @@ internal static class SetTextureConfigurator
         {
             new AdjustTextureFormat(),
             new AdjustTextureResolution(),
-            new RemoveMipMaps()
         };
         var analyzer = new TextureAnalyzer(avatarRoot.gameObject);
         foreach (var adjuster in adjusters)
