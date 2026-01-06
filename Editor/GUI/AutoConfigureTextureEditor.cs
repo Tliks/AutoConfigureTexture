@@ -8,7 +8,6 @@ public class AutoConfigureTextureEditor : Editor
     private SerializedProperty OptimizeTextureFormat = null!;
     private SerializedProperty FormatMode = null!;
     private SerializedProperty MaintainCrunch = null!;
-    private SerializedProperty OptimizeMipMap = null!;
     private SerializedProperty ResolutionReduction = null!;
     private SerializedProperty IsPCOnly = null!;
     private SerializedProperty Exclude = null!;
@@ -18,7 +17,6 @@ public class AutoConfigureTextureEditor : Editor
         OptimizeTextureFormat = serializedObject.FindProperty(nameof(AutoConfigureTexture.OptimizeTextureFormat));
         FormatMode = serializedObject.FindProperty(nameof(AutoConfigureTexture.FormatMode));
         MaintainCrunch = serializedObject.FindProperty(nameof(AutoConfigureTexture.MaintainCrunch));
-        OptimizeMipMap = serializedObject.FindProperty(nameof(AutoConfigureTexture.OptimizeMipMap));
         ResolutionReduction = serializedObject.FindProperty(nameof(AutoConfigureTexture.ResolutionReduction));
         IsPCOnly = serializedObject.FindProperty(nameof(AutoConfigureTexture.IsPCOnly));
         Exclude = serializedObject.FindProperty(nameof(AutoConfigureTexture.Exclude));
@@ -37,7 +35,6 @@ public class AutoConfigureTextureEditor : Editor
                 PropertyField(MaintainCrunch);
             }
         }
-        PropertyField(OptimizeMipMap);
         PropertyField(ResolutionReduction);
         PropertyField(IsPCOnly);
         PropertyField(Exclude);

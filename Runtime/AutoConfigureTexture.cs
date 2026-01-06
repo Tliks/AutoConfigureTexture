@@ -28,9 +28,10 @@ namespace com.aoyon.AutoConfigureTexture
         public bool OptimizeTextureFormat = true;
         public FormatMode FormatMode = FormatMode.Balanced;
         public bool MaintainCrunch = true;
-        public bool OptimizeMipMap = true;
         public Reduction ResolutionReduction = Reduction.Normal;
         public bool IsPCOnly = true;
         public List<Texture2D> Exclude = new();
+
+        [Obsolete] public bool OptimizeMipMap = true;
     }
 }
