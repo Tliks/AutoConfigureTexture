@@ -4,6 +4,7 @@
 ### Added
 
 ### Changed
+- Removed the MipMap deletion feature
 
 ### Deprecated
 

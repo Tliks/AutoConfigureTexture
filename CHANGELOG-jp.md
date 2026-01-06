@@ -4,6 +4,7 @@
 ### Added
 
 ### Changed
+- MipMapの削除機能を削除
 
 ### Deprecated
 
